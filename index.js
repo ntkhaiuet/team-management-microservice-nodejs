@@ -2,6 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
+const userRouter = require("./routes/user");
+
 // Kết nối DB
 const connectDB = async () => {
   try {
@@ -23,11 +25,7 @@ connectDB();
 
 const app = express();
 
-const User = require("./models/User");
-app.get("/api", async (req, res) => {
-  const user = await User.findOne({ username: "Khai" });
-  res.send(user);
-});
+app.use("/api", userRouter);
 
 const PORT = 3000;
 
