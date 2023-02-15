@@ -3,8 +3,13 @@ const router = express.Router();
 
 const User = require("../models/User");
 
-router.get("/", async (req, res) => {
-  const user = await User.findOne({ username: "Khai" });
+router.get("/user", async (req, res) => {
+  // dataUser.forEach(async function (user) {
+  //   await User.collection.insertOne(user);
+  // });
+
+  const user = await User.find();
+
   res.send(user);
 });
 
