@@ -17,6 +17,11 @@ router.get("/users", async (req, res) => {
   res.send(user);
 });
 
+router.get("/users/:_id", async (req, res) => {
+  const user = await User.findOne({ _id: "63ee53447da46ea83e0c1f52" });
+  res.send(user);
+});
+
 router.put("/users/:_id", async (req, res) => {
   const random = Math.floor(Math.random() * 10);
   await User.findOneAndUpdate(
