@@ -28,6 +28,7 @@ router.put("/users/:_id", async (req, res) => {
     { _id: "63ee53447da46ea83e0c1f52" },
     { first_name: "John" + random, last_name: "Cena" }
   );
+  res.json({ success: true });
 });
 
 module.exports = router;
