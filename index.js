@@ -10,6 +10,7 @@ const connectDB = async () => {
     await mongoose.connect(
       `mongodb+srv://team:${process.env.PASSWORD}@teammanagement.nznugpk.mongodb.net/?retryWrites=true&w=majority`,
       {
+        dbName: "team_management",
         useNewUrlParser: true,
         useUnifiedTopology: true,
       }
