@@ -18,9 +18,10 @@ router.get("/users", async (req, res) => {
 });
 
 router.put("/users/:_id", async (req, res) => {
+  const random = Math.floor(Math.random() * 10);
   await User.findOneAndUpdate(
     { _id: "63ee53447da46ea83e0c1f52" },
-    { first_name: "John", last_name: "Cena" }
+    { first_name: "John" + random, last_name: "Cena" }
   );
 });
 
