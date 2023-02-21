@@ -1,38 +1,60 @@
 const express = require("express");
 const router = express.Router();
+require("dotenv").config();
 
 const User = require("../models/User");
 
+// GET /api/users
+// Lấy thông tin của tất cả người dùng (để test)
 router.get("/users", async (req, res) => {
-  // const newUser = await new User({
-  //   full_name: "John Cena",
-  //   dob: "31/10/2001",
-  //   email: "johncena@gmail.com",
-  //   password: "aksjgghs",
-  //   phone_number: "0123456789",
-  //   gender: "Male",
-  // });
-  // await newUser.save();
-
-  // const deleteUser = await User.deleteMany({ email: "c@gmail.com" });
-
-  const user = await User.find();
-  console.log(user.length);
-  res.send(user);
+  try {
+    const user = await User.find();
+    res.json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 });
 
+// GET /api/users/:_id
+// Lấy thông tin của người dùng có _id
 router.get("/users/:_id", async (req, res) => {
-  const user = await User.findOne({ _id: "63f473fb60e4ab7df9f4112a" });
-  res.send(user);
+  try {
+    const user = await User.findById(req.params._id);
+    if (!user) {
+      res.status(400).json({ success: false, message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 });
 
+// PUT /api/users/:id
+// Cập nhật thông tin của người dùng có _id
 router.put("/users/:_id", async (req, res) => {
-  const random = Math.floor(Math.random() * 10);
-  await User.findOneAndUpdate(
-    { _id: "63f473fb60e4ab7df9f4112a" },
-    { first_name: "John" + random, last_name: "Cena" }
-  );
-  res.json({ success: true });
+  const { full_name, dob, email, phone_number, gender } = req.body;
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params._id,
+      {
+        full_name,
+        dob,
+        email,
+        phone_number,
+        gender,
+      },
+      { new: true }
+    );
+    if (!user) {
+      res.status(400).json({ success: false, message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 });
 
 router.get("/usersdb", async (req, res) => {
@@ -63,6 +85,10 @@ router.get("/usersdb", async (req, res) => {
       </style>
     </head>
     <body>
+      <p>Lấy thông tin của tất cả người dùng (để test): GET: <a target= "_blank" href="http://${process.env.SERVER}:3000/api/users">http://${process.env.SERVER}:3000/api/users</a></p>
+      <p>Lấy thông tin của người dùng có _id: GET: <a target= "_blank" href="http://${process.env.SERVER}:3000/api/users/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}:3000/api/users/63f473fb60e4ab7df9f4112a</a></p>
+      <p>Cập nhật thông tin của người dùng có _id: PUT: <a target= "_blank" href="http://${process.env.SERVER}:3000/api/users/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}:3000/api/users/63f473fb60e4ab7df9f4112a</a>, data từ client: const { full_name, dob, email, phone_number, gender } = req.body, return: thông tin người dùng sau khi cập nhật;
+      </p>
       <table>
         <thead>
           <tr>

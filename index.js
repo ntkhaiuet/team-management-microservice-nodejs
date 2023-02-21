@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
 require("dotenv").config();
 
 const userRouter = require("./routes/user");
@@ -25,11 +26,12 @@ const connectDB = async () => {
 connectDB();
 
 const app = express();
+app.use(bodyParser.json());
 
 app.use("/api", userRouter);
 
 const PORT = 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
+  console.log(`Server started on http://localhost:${PORT}/api/usersdb`);
 });
