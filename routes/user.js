@@ -85,9 +85,9 @@ router.get("/usersdb", async (req, res) => {
       </style>
     </head>
     <body>
-      <p>Lấy thông tin của tất cả người dùng (để test): GET: <a target= "_blank" href="http://${process.env.SERVER}:3000/api/users">http://${process.env.SERVER}:3000/api/users</a></p>
-      <p>Lấy thông tin của người dùng có _id: GET: <a target= "_blank" href="http://${process.env.SERVER}:3000/api/users/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}:3000/api/users/63f473fb60e4ab7df9f4112a</a></p>
-      <p>Cập nhật thông tin của người dùng có _id: PUT: <a target= "_blank" href="http://${process.env.SERVER}:3000/api/users/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}:3000/api/users/63f473fb60e4ab7df9f4112a</a>, data từ client: const { full_name, dob, email, phone_number, gender } = req.body, return: thông tin người dùng sau khi cập nhật;
+      <p>Lấy thông tin của tất cả người dùng (để test): GET: <a target= "_blank" href="http://${process.env.SERVER}/api/users">http://${process.env.SERVER}/api/users</a></p>
+      <p>Lấy thông tin của người dùng có _id: GET: <a target= "_blank" href="http://${process.env.SERVER}/api/users/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}/api/users/63f473fb60e4ab7df9f4112a</a></p>
+      <p>Cập nhật thông tin của người dùng có _id: PUT: <a target= "_blank" href="http://${process.env.SERVER}/api/users/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}/api/users/63f473fb60e4ab7df9f4112a</a>, data từ client: const { full_name, dob, email, phone_number, gender } = req.body, return: thông tin người dùng sau khi cập nhật;
       </p>
       <table>
         <thead>
