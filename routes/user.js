@@ -1,12 +1,14 @@
 const express = require("express");
 const router = express.Router();
+const verifyToken = require("../middleware/auth");
 require("dotenv").config();
 
 const User = require("../models/User");
 
-// GET /api/users
-// Lấy thông tin của tất cả người dùng (để test)
-router.get("/users", async (req, res) => {
+// @route GET api/user/
+// @desc Get user
+// @access Public
+router.get("/", async (req, res) => {
   try {
     const user = await User.find();
     res.json(user);
@@ -16,48 +18,10 @@ router.get("/users", async (req, res) => {
   }
 });
 
-// GET /api/users/:_id
-// Lấy thông tin của người dùng có _id
-router.get("/users/:_id", async (req, res) => {
-  try {
-    const user = await User.findById(req.params._id);
-    if (!user) {
-      res.status(400).json({ success: false, message: "User not found" });
-    }
-    res.json(user);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
-
-// PUT /api/users/:id
-// Cập nhật thông tin của người dùng có _id
-router.put("/users/:_id", async (req, res) => {
-  const { full_name, dob, email, phone_number, gender } = req.body;
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.params._id,
-      {
-        full_name,
-        dob,
-        email,
-        phone_number,
-        gender,
-      },
-      { new: true }
-    );
-    if (!user) {
-      res.status(400).json({ success: false, message: "User not found" });
-    }
-    res.json(user);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
-
-router.get("/usersdb", async (req, res) => {
+// @route GET api/user/document
+// @desc Get document
+// @access Public
+router.get("/document", async (req, res) => {
   res.send(`
     <!DOCTYPE html>
     <html>
@@ -85,9 +49,9 @@ router.get("/usersdb", async (req, res) => {
       </style>
     </head>
     <body>
-      <p>Lấy thông tin của tất cả người dùng (để test): GET: <a target= "_blank" href="http://${process.env.SERVER}/api/users">http://${process.env.SERVER}/api/users</a></p>
-      <p>Lấy thông tin của người dùng có _id: GET: <a target= "_blank" href="http://${process.env.SERVER}/api/users/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}/api/users/63f473fb60e4ab7df9f4112a</a></p>
-      <p>Cập nhật thông tin của người dùng có _id: PUT: <a target= "_blank" href="http://${process.env.SERVER}/api/users/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}/api/users/63f473fb60e4ab7df9f4112a</a>, data từ client: const { full_name, dob, email, phone_number, gender } = req.body, return: thông tin người dùng sau khi cập nhật;
+      <p>Lấy thông tin của tất cả người dùng (để test): GET: <a target= "_blank" href="http://${process.env.SERVER}/api/user">http://${process.env.SERVER}/api/user</a></p>
+      <p>Lấy thông tin của người dùng có _id: GET: <a target= "_blank" href="http://${process.env.SERVER}/api/user/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}/api/user/63f473fb60e4ab7df9f4112a</a></p>
+      <p>Cập nhật thông tin của người dùng có _id: PUT: <a target= "_blank" href="http://${process.env.SERVER}/api/user/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}/api/user/63f473fb60e4ab7df9f4112a</a>, data từ client: const { full_name, dob, email, phone_number, gender } = req.body, return: thông tin người dùng sau khi cập nhật;
       </p>
       <table>
         <thead>
@@ -154,6 +118,49 @@ router.get("/usersdb", async (req, res) => {
     </body>
     </html>
   `);
+});
+
+// @route GET api/user/:id
+// @desc Get user by _id
+// @access Public
+router.get("/:_id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params._id);
+    if (!user) {
+      res.status(400).json({ success: false, message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// @route PUT api/user/:id
+// @desc Update user info
+// @access Private
+router.put("/:_id", verifyToken, async (req, res) => {
+  const { full_name, dob, email, phone_number, gender } = req.body;
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params._id,
+      {
+        full_name,
+        dob,
+        email,
+        phone_number,
+        gender,
+      },
+      { new: true }
+    );
+    if (!user) {
+      res.status(400).json({ success: false, message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 });
 
 module.exports = router;

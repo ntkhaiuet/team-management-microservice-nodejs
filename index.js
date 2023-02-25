@@ -1,9 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
 require("dotenv").config();
 
 const userRouter = require("./routes/user");
+const authRouter = require("./routes/auth");
 
 // Kết nối DB
 const connectDB = async () => {
@@ -26,12 +26,13 @@ const connectDB = async () => {
 connectDB();
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
-app.use("/api", userRouter);
+app.use("/api/user", userRouter);
+app.use("/api/auth", authRouter);
 
 const PORT = 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server started on http://localhost:${PORT}/api/usersdb`);
+  console.log(`Server started on http://localhost:${PORT}/api/user/document`);
 });
