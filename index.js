@@ -28,6 +28,30 @@ connectDB();
 const app = express();
 app.use(express.json());
 
+const swaggerJsDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "User API",
+      version: "1.0.0",
+      description:
+        "User API documentation. PUT /api/user/{_id} cần có accessToken. accessToken nhận được khi đăng ký hoặc đăng nhập. Ở client thêm Authorization: Bearer {accessToken} vào header",
+    },
+    servers: [
+      {
+        url: `http://${process.env.SERVER}`,
+      },
+    ],
+  },
+  apis: ["./routes/*.js"],
+};
+
+const specs = swaggerJsDoc(options);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs, options));
+
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 

@@ -6,6 +6,71 @@ require("dotenv").config();
 
 const User = require("../models/User");
 
+/**
+ * @swagger
+ * tags:
+ *  name: Auths
+ *  description: Quản lý API Auth
+ */
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *  post:
+ *    summary: Đăng ký
+ *    tags: [Auths]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              full_name:
+ *                type: String
+ *              email:
+ *                type: String
+ *              password:
+ *                type: String
+ *    responses:
+ *      200:
+ *        description: Đăng ký thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  type: bool
+ *                  default: true
+ *                message:
+ *                  type: String
+ *                  default: User created successfully
+ *                accessToken:
+ *                  type: String
+ *      400:
+ *        description: User not found
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: User not found
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
 // @route POST api/auth/register
 // @desc Register user
 // @access Public
@@ -51,6 +116,60 @@ router.post("/register", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *  post:
+ *    summary: Đăng nhập
+ *    tags: [Auths]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              email:
+ *                type: String
+ *              password:
+ *                type: String
+ *    responses:
+ *      200:
+ *        description: Đăng nhập thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: User logged in successfully
+ *                accessToken:
+ *                  type: String
+ *      400:
+ *        description: User not found
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: User not found
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
 // @route POST api/auth/login
 // @desc Login user
 // @access Public

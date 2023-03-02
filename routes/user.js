@@ -5,6 +5,79 @@ require("dotenv").config();
 
 const User = require("../models/User");
 
+/**
+ * @swagger
+ * components:
+ *  schemas:
+ *    User:
+ *      required:
+ *        - _id
+ *        - full_name
+ *        - email
+ *        - password
+ *      properties:
+ *        _id:
+ *          type: String
+ *        full_name:
+ *          type: String
+ *        email:
+ *          type: String
+ *        password:
+ *          type: String
+ *        dob:
+ *          type: String
+ *        email_verified_at:
+ *          type: String
+ *        phone_number:
+ *          type: String
+ *        gender:
+ *          type: String
+ *      example:
+ *        _id: 63f9d4420a18ec50b10cb14b
+ *        full_name: Nguyen The Khai
+ *        email: ntkhaiuet@gmail.com
+ *        password: $argon2id$v=19$m=65536,t=3,p=4$PWTgM6QRv52wpg03w1aeew$wLop22AaeEYvgWUxN5WK60xjAaw7F+XQcn5L4pF5FO0
+ *        dob: 31/10/2001
+ *        email_verified_at: null
+ *        phone_number: '0376269482'
+ *        gender: Male
+ *
+ */
+
+/**
+ * @swagger
+ * tags:
+ *  name: Users
+ *  description: Quản lý API User
+ */
+
+/**
+ * @swagger
+ * /api/user/:
+ *  get:
+ *    summary: Thông tin của tất cả người dùng
+ *    tags: [Users]
+ *    responses:
+ *      200:
+ *        description: OK
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/User'
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
 // @route GET api/user/
 // @desc Get user
 // @access Public
@@ -18,108 +91,49 @@ router.get("/", async (req, res) => {
   }
 });
 
-// @route GET api/user/document
-// @desc Get document
-// @access Public
-router.get("/document", async (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Collection User Info</title> 
-      <style>
-        table {
-          border:1px solid #b3adad;
-          border-collapse:collapse;
-          padding:5px;
-        }
-        table th {
-          border:1px solid #b3adad;
-          padding:5px;
-          background: #f0f0f0;
-          color: #313030;
-        }
-        table td {
-          border:1px solid #b3adad;
-          text-align:center;
-          padding:5px;
-          background: #ffffff;
-          color: #313030;
-        }
-      </style>
-    </head>
-    <body>
-      <p>Lấy thông tin của tất cả người dùng (để test): GET: <a target= "_blank" href="http://${process.env.SERVER}/api/user">http://${process.env.SERVER}/api/user</a></p>
-      <p>Lấy thông tin của người dùng có _id: GET: <a target= "_blank" href="http://${process.env.SERVER}/api/user/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}/api/user/63f473fb60e4ab7df9f4112a</a></p>
-      <p>Cập nhật thông tin của người dùng có _id: PUT: <a target= "_blank" href="http://${process.env.SERVER}/api/user/63f473fb60e4ab7df9f4112a">http://${process.env.SERVER}/api/user/63f473fb60e4ab7df9f4112a</a>, data từ client: const { full_name, dob, email, phone_number, gender } = req.body, return: thông tin người dùng sau khi cập nhật;
-      </p>
-      <table>
-        <thead>
-          <tr>
-            <th>Document</th>
-            <th>Type</th>
-            <th>Required</th>
-            <th>Default</th>
-            <th>Unique</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>&nbsp;full_name</td>
-            <td>String&nbsp;<br></td>
-            <td><span style="font-style: normal; font-weight: 400;">true&nbsp;</span><br></td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-          </tr>
-          <tr>
-            <td>&nbsp;dob</td>
-            <td><span style="font-style: normal; font-weight: 400;">String&nbsp;</span><br></td>
-            <td>&nbsp;</td>
-            <td>null&nbsp;</td>
-            <td>&nbsp;</td>
-          </tr>
-          <tr>
-            <td>&nbsp;email</td>
-            <td><span style="font-style: normal; font-weight: 400;">String&nbsp;</span><br></td>
-            <td><span style="font-style: normal; font-weight: 400;">true&nbsp;</span><br></td>
-            <td>&nbsp;</td>
-            <td><span style="font-style: normal; font-weight: 400;">true&nbsp;</span>&nbsp;</td>
-          </tr>
-          <tr>
-            <td>password&nbsp;</td>
-            <td>String&nbsp;<span style="font-style: normal; font-weight: 400;"><br></span></td>
-            <td><span style="font-style: normal; font-weight: 400;">true&nbsp;</span><br></td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-          </tr>
-          <tr>
-            <td>&nbsp;email_verified_at</td>
-            <td><span style="font-style: normal; font-weight: 400;">String&nbsp;</span><br></td>
-            <td>&nbsp;</td>
-            <td>&nbsp;null&nbsp;</td>
-            <td>&nbsp;</td>
-          </tr>
-          <tr>
-            <td>&nbsp;phone_number</td>
-            <td><span style="font-style: normal; font-weight: 400;">String&nbsp;</span><br></td>
-            <td>&nbsp;</td>
-            <td>&nbsp;null&nbsp;</td>
-            <td>&nbsp;</td>
-          </tr>
-          <tr>
-            <td>&nbsp;gender</td>
-            <td><span style="font-style: normal; font-weight: 400;">String&nbsp;</span><br></td>
-            <td>&nbsp;</td>
-            <td>&nbsp;null&nbsp;</td>
-            <td>&nbsp;</td>
-          </tr>
-        </tbody>
-      </table>
-    </body>
-    </html>
-  `);
-});
-
+/**
+ * @swagger
+ * /api/user/{_id}:
+ *  get:
+ *    summary: Nhận thông tin người dùng theo _id
+ *    tags: [Users]
+ *    parameters:
+ *      - in: path
+ *        name: _id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: ID của người dùng
+ *    responses:
+ *      200:
+ *        description: OK
+ *        content:
+ *          application/json:
+ *            schema:
+ *                $ref: '#/components/schemas/User'
+ *      400:
+ *        description: User not found
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: User not found
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
 // @route GET api/user/:id
 // @desc Get user by _id
 // @access Public
@@ -136,6 +150,79 @@ router.get("/:_id", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       description: Nhập accessToken vào đây, accessToken được tạo ra sau khi đăng ký hoặc đăng nhập
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+
+/**
+ * @swagger
+ * /api/user/{_id}:
+ *  put:
+ *    summary: Cập nhật thông tin người dùng theo _id
+ *    tags: [Users]
+ *    security:
+ *      - bearerAuth: []
+ *    parameters:
+ *      - in: path
+ *        name: _id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: ID của người dùng
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              full_name:
+ *                type: String
+ *              email:
+ *                type: String
+ *              dob:
+ *                type: String
+ *              phone_number:
+ *                type: String
+ *              gender:
+ *                type: String
+ *    responses:
+ *      200:
+ *        description: Trả về thông tin của người dùng sau khi cập nhật
+ *        content:
+ *          application/json:
+ *            schema:
+ *                $ref: '#/components/schemas/User'
+ *      400:
+ *        description: User not found
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: User not found
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
 // @route PUT api/user/:id
 // @desc Update user info
 // @access Private
