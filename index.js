@@ -1,5 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const swaggerJsDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 require("dotenv").config();
 
 const userRouter = require("./routes/user");
@@ -28,9 +30,6 @@ connectDB();
 const app = express();
 app.use(express.json());
 
-const swaggerJsDoc = require("swagger-jsdoc");
-const swaggerUi = require("swagger-ui-express");
-
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -58,5 +57,5 @@ app.use("/api/auth", authRouter);
 const PORT = 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server started on http://localhost:${PORT}/api/user/document`);
+  console.log(`Server started on http://localhost:${PORT}/api-docs`);
 });
