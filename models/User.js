@@ -7,9 +7,10 @@ const UserSchema = new Schema(
     dob: { type: String, default: null },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    email_verified_at: { type: String, default: null },
+    email_verified: { type: Boolean, default: false },
     phone_number: { type: String, default: null },
     gender: { type: String, default: null },
+    token: { type: String, default: null },
   },
   {
     versionKey: false,
