@@ -29,9 +29,14 @@ const connectDB = async () => {
 connectDB();
 
 const app = express();
+
+// Middleware chuyển request.body thành JSON
 app.use(express.json());
+
+// Cho phép truy cập API từ bên ngoài vào tất cả routes
 app.use(cors());
 
+// Cấu hình Swagger UI để hiển thị API documentation
 const options = {
   definition: {
     openapi: "3.0.0",
