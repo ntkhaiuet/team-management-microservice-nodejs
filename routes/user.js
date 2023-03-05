@@ -26,21 +26,24 @@ const User = require("../models/User");
  *          type: String
  *        dob:
  *          type: String
- *        email_verified_at:
- *          type: String
+ *        email_verified:
+ *          type: Boolean
  *        phone_number:
  *          type: String
  *        gender:
  *          type: String
+ *        token:
+ *          type: String
  *      example:
- *        _id: 63f9d4420a18ec50b10cb14b
+ *        _id: 64045186b72087718b17a908
  *        full_name: Nguyen The Khai
  *        email: ntkhaiuet@gmail.com
- *        password: $argon2id$v=19$m=65536,t=3,p=4$PWTgM6QRv52wpg03w1aeew$wLop22AaeEYvgWUxN5WK60xjAaw7F+XQcn5L4pF5FO0
+ *        password: $argon2id$v=19$m=65536,t=3,p=4$9h5sAqY6t7vbaG/3IjODJA$TVKCeBY2Ggv/9O/Q2PoVhvgVuUVJbCVemyiNjwazGUY
  *        dob: 31/10/2001
- *        email_verified_at: null
+ *        email_verified: false
  *        phone_number: '0376269482'
  *        gender: Male
+ *        token: b394b763b5591dcb3f362524c22c081b01db2370
  *
  */
 
@@ -112,7 +115,7 @@ router.get("/", async (req, res) => {
  *            schema:
  *                $ref: '#/components/schemas/User'
  *      400:
- *        description: User not found
+ *        description: Không tìm thấy người dùng
  *        content:
  *          application/json:
  *            schema:
@@ -121,7 +124,7 @@ router.get("/", async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: User not found
+ *                  default: Không tìm thấy người dùng
  *      500:
  *        description: Internal server error
  *        content:
@@ -141,7 +144,9 @@ router.get("/:_id", async (req, res) => {
   try {
     const user = await User.findById(req.params._id);
     if (!user) {
-      res.status(400).json({ success: false, message: "User not found" });
+      res
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
     }
     res.json(user);
   } catch (error) {
@@ -201,7 +206,7 @@ router.get("/:_id", async (req, res) => {
  *            schema:
  *                $ref: '#/components/schemas/User'
  *      400:
- *        description: User not found
+ *        description: Không tìm thấy người dùng
  *        content:
  *          application/json:
  *            schema:
@@ -210,7 +215,7 @@ router.get("/:_id", async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: User not found
+ *                  default: Không tìm thấy người dùng
  *      500:
  *        description: Internal server error
  *        content:
@@ -241,7 +246,9 @@ router.put("/:_id", verifyToken, async (req, res) => {
       { new: true }
     );
     if (!user) {
-      res.status(400).json({ success: false, message: "User not found" });
+      res
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
     }
     res.json(user);
   } catch (error) {

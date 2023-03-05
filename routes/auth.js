@@ -41,15 +41,13 @@ const User = require("../models/User");
  *              type: object
  *              properties:
  *                success:
- *                  type: bool
  *                  default: true
  *                message:
- *                  type: String
- *                  default: User created successfully
+ *                  default: Đăng ký thành công
  *                accessToken:
  *                  type: String
  *      400:
- *        description: User not found
+ *        description: Thiếu trường bắt buộc hoặc email đã tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -58,7 +56,7 @@ const User = require("../models/User");
  *                success:
  *                  default: false
  *                message:
- *                  default: User not found
+ *                  default: Thiếu trường bắt buộc hoặc email đã tồn tại
  *      500:
  *        description: Internal server error
  *        content:
@@ -81,7 +79,7 @@ router.post("/register", async (req, res) => {
   if (!full_name || !email || !password) {
     return res
       .status(400)
-      .json({ succes: false, message: "Missing required fields" });
+      .json({ succes: false, message: "Thiếu trường bắt buộc" });
   }
 
   try {
@@ -91,7 +89,7 @@ router.post("/register", async (req, res) => {
     if (user) {
       return res
         .status(400)
-        .json({ succes: false, message: "Email already taken" });
+        .json({ succes: false, message: "Email đã tồn tại" });
     }
 
     // All good
@@ -107,7 +105,7 @@ router.post("/register", async (req, res) => {
 
     res.json({
       success: true,
-      message: "User created successfully",
+      message: "Đăng ký thành công",
       accessToken,
     });
   } catch (error) {
@@ -144,11 +142,11 @@ router.post("/register", async (req, res) => {
  *                success:
  *                  default: true
  *                message:
- *                  default: User logged in successfully
+ *                  default: Đăng nhập thành công
  *                accessToken:
  *                  type: String
  *      400:
- *        description: User not found
+ *        description: Thiếu trường bắt buộc hoặc Email/password không chính xác
  *        content:
  *          application/json:
  *            schema:
@@ -157,7 +155,7 @@ router.post("/register", async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: User not found
+ *                  default: Thiếu trường bắt buộc hoặc Email/password không chính xác
  *      500:
  *        description: Internal server error
  *        content:
@@ -180,7 +178,7 @@ router.post("/login", async (req, res) => {
   if (!email || !password) {
     return res
       .status(400)
-      .json({ succes: false, message: "Missing required fields" });
+      .json({ succes: false, message: "Thiếu trường bắt buộc" });
   }
 
   try {
@@ -189,7 +187,7 @@ router.post("/login", async (req, res) => {
     if (!user) {
       return res
         .status(400)
-        .json({ succes: false, message: "Incorrect email or password" });
+        .json({ succes: false, message: "Email/password không chính xác" });
     }
 
     // Email found
@@ -197,7 +195,7 @@ router.post("/login", async (req, res) => {
     if (!passwordValid) {
       return res
         .status(400)
-        .json({ succes: false, message: "Incorrect email or password" });
+        .json({ succes: false, message: "Email/password không chính xác" });
     }
 
     // All good
@@ -209,7 +207,7 @@ router.post("/login", async (req, res) => {
 
     res.json({
       success: true,
-      message: "User logged in successfully",
+      message: "Đăng nhập thành công",
       accessToken,
     });
   } catch (error) {

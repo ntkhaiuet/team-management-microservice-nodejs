@@ -7,6 +7,7 @@ require("dotenv").config();
 
 const userRouter = require("./routes/user");
 const authRouter = require("./routes/auth");
+const emailRouter = require("./routes/email");
 
 // Kết nối DB
 const connectDB = async () => {
@@ -44,7 +45,7 @@ const options = {
       title: "User API",
       version: "1.0.0",
       description:
-        "User API documentation. PUT /api/user/{_id} cần có accessToken. accessToken nhận được khi đăng ký hoặc đăng nhập. Ở client thêm Authorization: Bearer {accessToken} vào header",
+        "User API documentation. PUT /api/user/{_id} và POST /api/email/send cần có accessToken. accessToken nhận được khi đăng ký hoặc đăng nhập. Ở client thêm Authorization: Bearer {accessToken} vào header",
     },
     servers: [
       {
@@ -60,6 +61,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs, options));
 
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/email", emailRouter);
 
 const PORT = 3000;
 
