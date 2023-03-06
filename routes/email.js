@@ -144,16 +144,17 @@ router.get("/verify/:token", async (req, res) => {
 
     if (!user) {
       // Token không hợp lệ
-      res.status(404).json({ success: false, message: "Token không hợp lệ" });
-    } else {
-      // Cập nhật trạng thái đã xác minh
-      user.email_verified = true;
-      user.save();
-      res.json({
-        success: true,
-        message: "Xác minh email thành công",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Token không hợp lệ" });
     }
+    // Cập nhật trạng thái đã xác minh
+    user.email_verified = true;
+    await user.save();
+    res.json({
+      success: true,
+      message: "Xác minh email thành công",
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -220,6 +221,13 @@ router.get("/verify/:token", async (req, res) => {
 router.post("/send", verifyToken, async (req, res) => {
   const email = req.body.email;
 
+  //   Xác thực cơ bản
+  if (!email) {
+    return res
+      .status(400)
+      .json({ succes: false, message: "Thiếu trường bắt buộc" });
+  }
+
   // Tạo token xác minh và lưu vào DB
   const token = crypto.randomBytes(20).toString("hex");
   try {
@@ -230,10 +238,12 @@ router.post("/send", verifyToken, async (req, res) => {
         .json({ succes: false, message: "Email không tồn tại" });
     }
     user.token = token;
-    user.save();
+    await user.save();
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 
   //   Gửi email xác minh tới user
@@ -248,7 +258,7 @@ router.post("/send", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /api/email/resetpassword:
+ * /api/email/reset_password:
  *  post:
  *    summary: Gửi email đặt lại mật khẩu
  *    tags: [Emails]
@@ -299,18 +309,29 @@ router.post("/send", verifyToken, async (req, res) => {
 // @route GET api/email/resetpassword
 // @desc Gửi email đặt lại mật khẩu
 // @access Public
-router.post("/resetpassword", async function (req, res) {
+router.post("/reset_password", async function (req, res) {
   const email = req.body.email;
+
+  //   Xác thực cơ bản
+  if (!email) {
+    return res
+      .status(400)
+      .json({ succes: false, message: "Thiếu trường bắt buộc" });
+  }
 
   // Kiểm tra email tồn tại
   try {
     const user = await User.findOne({ email: email });
     if (!user) {
-      res.status(400).json({ success: false, message: "Email không tồn tại" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email không tồn tại" });
     }
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 
   // Gửi email đặt lại mật khẩu
