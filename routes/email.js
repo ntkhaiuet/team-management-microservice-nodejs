@@ -3,6 +3,8 @@ const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const generator = require("generate-password");
+const argon2 = require("argon2");
 require("dotenv").config();
 
 const User = require("../models/User");
@@ -20,7 +22,7 @@ const transporter = nodemailer.createTransport({
 function sendVerificationEmail(email, token) {
   return new Promise((resolve, reject) => {
     const mailOptions = {
-      from: "sheissocute2001@gmail.com",
+      from: process.env.EMAIL,
       to: email,
       subject: "Xác minh email",
       text: `Truy cập vào đường dẫn sau để xác minh email của bạn: http://${process.env.SERVER}/api/email/verify/${token}`,
@@ -33,6 +35,43 @@ function sendVerificationEmail(email, token) {
       } else {
         console.log("Email sent: " + info.response);
         resolve("Đã gửi email xác minh tới email của bạn");
+      }
+    });
+  });
+}
+
+// Hàm gửi email đặt lại mật khẩu
+function sendResetPasswordEmail(email) {
+  return new Promise((resolve, reject) => {
+    // Tạo mật khẩu ngẫu nhiên
+    const password = generator.generate({
+      length: 8,
+      numbers: true,
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
+      subject: "Đặt lại mật khẩu",
+      text: `Sử dụng mật khẩu dưới sau để truy cập vào tài khoản ${email} của bạn: ${password}`,
+    };
+
+    transporter.sendMail(mailOptions, async function (error, info) {
+      if (error) {
+        console.log(error);
+        reject("Có lỗi xảy ra");
+      } else {
+        console.log("Email sent: " + info.response);
+        try {
+          // Mã hóa và lưu mật khẩu mới vào DB
+          const user = await User.findOne({ email: email });
+          const hashedPassword = await argon2.hash(password);
+          user.password = hashedPassword;
+          await user.save();
+        } catch (e) {
+          console.log(e);
+        }
+        resolve("Đã gửi mật khẩu mới tới email của bạn");
       }
     });
   });
@@ -94,7 +133,7 @@ function sendVerificationEmail(email, token) {
  *                  default: Internal server error
  */
 // @route GET api/email/verify/:token
-// @desc Verification email
+// @desc Xác thực email
 // @access Public
 router.get("/verify/:token", async (req, res) => {
   const token = req.params.token;
@@ -176,7 +215,7 @@ router.get("/verify/:token", async (req, res) => {
  *                  default: Internal server error
  */
 // @route POST api/email/send
-// @desc Send email verification
+// @desc Gửi email xác thực
 // @access Private
 router.post("/send", verifyToken, async (req, res) => {
   const email = req.body.email;
@@ -201,6 +240,89 @@ router.post("/send", verifyToken, async (req, res) => {
   try {
     const result = await sendVerificationEmail(email, token);
     res.json({ success: true, message: result, token: token });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/email/resetpassword:
+ *  post:
+ *    summary: Gửi email đặt lại mật khẩu
+ *    tags: [Emails]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              email:
+ *                type: String
+ *    responses:
+ *      200:
+ *        description: Đã gửi email đặt lại mật khẩu
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Đã gửi mật khẩu mới tới email của bạn
+ *      400:
+ *        description: Email không tồn tại
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Email không tồn tại
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
+// @route GET api/email/resetpassword
+// @desc Gửi email đặt lại mật khẩu
+// @access Public
+router.post("/resetpassword", async function (req, res) {
+  const email = req.body.email;
+
+  // Kiểm tra email tồn tại
+  try {
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      res.status(400).json({ success: false, message: "Email không tồn tại" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+
+  // Gửi email đặt lại mật khẩu
+  try {
+    const result = await sendResetPasswordEmail(email);
+    var success;
+    if (result === "Có lỗi xảy ra") {
+      success = false;
+    } else {
+      success = true;
+    }
+    res.json({ success: success, message: result });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Internal server error" });
