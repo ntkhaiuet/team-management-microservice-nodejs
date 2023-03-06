@@ -75,7 +75,7 @@ const User = require("../models/User");
 router.post("/register", async (req, res) => {
   const { full_name, email, password } = req.body;
 
-  //   Simple validation
+  //   Xác thực cơ bản
   if (!full_name || !email || !password) {
     return res
       .status(400)
@@ -83,21 +83,20 @@ router.post("/register", async (req, res) => {
   }
 
   try {
-    // Check for existing email
+    // Kiểm tra email tồn tại
     const user = await User.findOne({ email });
-
     if (user) {
       return res
         .status(400)
         .json({ succes: false, message: "Email đã tồn tại" });
     }
 
-    // All good
+    // Mã hóa mật khẩu và lưu tài khoản người dùng mới vào DB
     const hashedPassword = await argon2.hash(password);
     const newUser = new User({ full_name, email, password: hashedPassword });
     await newUser.save();
 
-    // Return token
+    // Trả về token
     const accessToken = jwt.sign(
       { userId: newUser._id },
       process.env.ACCESS_TOKEN_SECRET
@@ -174,7 +173,7 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  //   Simple validation
+  //   Xác thực cơ bản
   if (!email || !password) {
     return res
       .status(400)
@@ -182,7 +181,7 @@ router.post("/login", async (req, res) => {
   }
 
   try {
-    // Check for existing email
+    // Kiểm tra email tồn tại
     const user = await User.findOne({ email });
     if (!user) {
       return res
@@ -190,7 +189,7 @@ router.post("/login", async (req, res) => {
         .json({ succes: false, message: "Email/password không chính xác" });
     }
 
-    // Email found
+    // Kiểm tra mật khẩu người dùng nhập vào và mật khẩu lưu trong DB
     const passwordValid = await argon2.verify(user.password, password);
     if (!passwordValid) {
       return res
@@ -198,8 +197,7 @@ router.post("/login", async (req, res) => {
         .json({ succes: false, message: "Email/password không chính xác" });
     }
 
-    // All good
-    // Return token
+    // Trả về token
     const accessToken = jwt.sign(
       { userId: user._id },
       process.env.ACCESS_TOKEN_SECRET

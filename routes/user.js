@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
+const argon2 = require("argon2");
 require("dotenv").config();
 
 const User = require("../models/User");
@@ -88,6 +89,104 @@ router.get("/", async (req, res) => {
   try {
     const user = await User.find();
     res.json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/user/change_password:
+ *  post:
+ *    summary: Gửi email đặt lại mật khẩu
+ *    tags: [Users]
+ *    security:
+ *      - bearerAuth: []
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              email:
+ *                type: String
+ *              password:
+ *                type: String
+ *              new_password:
+ *                type: String
+ *    responses:
+ *      200:
+ *        description: Thay đổi mật khẩu thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Thay đổi mật khẩu thành công
+ *      400:
+ *        description: Thiếu trường bắt buộc/Email không tồn tại/Mật khẩu không đúng
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Thiếu trường bắt buộc/Email không tồn tại/Mật khẩu không đúng
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
+// @route POST api/user/change_password
+// @desc Đổi mật khẩu tài khoản người dùng
+// @access Private
+router.post("/change_password", verifyToken, async function (req, res) {
+  const { email, password, new_password } = req.body;
+
+  //   Xác thực cơ bản
+  if ((!email, !password || !new_password)) {
+    return res
+      .status(400)
+      .json({ succes: false, message: "Thiếu trường bắt buộc" });
+  }
+
+  try {
+    // Kiểm tra email tồn tại
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email không tồn tại" });
+    }
+
+    // Kiểm tra mật khẩu người dùng nhập vào và mật khẩu lưu trong DB
+    const passwordValid = await argon2.verify(user.password, password);
+
+    if (!passwordValid) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Mật khẩu không đúng" });
+    }
+
+    // Lưu mật khẩu mới vào DB
+    const hashedPassword = await argon2.hash(new_password);
+    user.password = hashedPassword;
+    await user.save();
+    res.json({ success: true, message: "Thay đổi mật khẩu thành công" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Internal server error" });
