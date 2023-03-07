@@ -57,49 +57,9 @@ const User = require("../models/User");
 
 /**
  * @swagger
- * /api/user/:
- *  get:
- *    summary: Thông tin của tất cả người dùng
- *    tags: [Users]
- *    responses:
- *      200:
- *        description: OK
- *        content:
- *          application/json:
- *            schema:
- *              type: array
- *              items:
- *                $ref: '#/components/schemas/User'
- *      500:
- *        description: Internal server error
- *        content:
- *          application/json:
- *            schema:
- *              type: object
- *              properties:
- *                success:
- *                  default: false
- *                message:
- *                  default: Internal server error
- */
-// @route GET api/user/
-// @desc Get user
-// @access Public
-router.get("/", async (req, res) => {
-  try {
-    const user = await User.find();
-    res.json(user);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
-
-/**
- * @swagger
  * /api/user/change_password:
  *  post:
- *    summary: Gửi email đặt lại mật khẩu
+ *    summary: Thay đổi mật khẩu
  *    tags: [Users]
  *    security:
  *      - bearerAuth: []
@@ -195,17 +155,12 @@ router.post("/change_password", verifyToken, async function (req, res) {
 
 /**
  * @swagger
- * /api/user/{_id}:
+ * /api/user:
  *  get:
- *    summary: Nhận thông tin người dùng theo _id
+ *    summary: Nhận thông tin người dùng
  *    tags: [Users]
- *    parameters:
- *      - in: path
- *        name: _id
- *        schema:
- *          type: string
- *        required: true
- *        description: ID của người dùng
+ *    security:
+ *      - bearerAuth: []
  *    responses:
  *      200:
  *        description: OK
@@ -236,12 +191,12 @@ router.post("/change_password", verifyToken, async function (req, res) {
  *                message:
  *                  default: Internal server error
  */
-// @route GET api/user/:id
-// @desc Get user by _id
+// @route GET api/user
+// @desc Nhận thông tin người dùng
 // @access Public
-router.get("/:_id", async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.params._id);
+    const user = await User.findById(req.userId);
     if (!user) {
       res
         .status(400)
@@ -267,19 +222,12 @@ router.get("/:_id", async (req, res) => {
 
 /**
  * @swagger
- * /api/user/{_id}:
+ * /api/user:
  *  put:
- *    summary: Cập nhật thông tin người dùng theo _id
+ *    summary: Cập nhật thông tin người dùng
  *    tags: [Users]
  *    security:
  *      - bearerAuth: []
- *    parameters:
- *      - in: path
- *        name: _id
- *        schema:
- *          type: string
- *        required: true
- *        description: ID của người dùng
  *    requestBody:
  *      required: true
  *      content:
@@ -327,14 +275,14 @@ router.get("/:_id", async (req, res) => {
  *                message:
  *                  default: Internal server error
  */
-// @route PUT api/user/:id
-// @desc Update user info
+// @route PUT api/user
+// @desc Cập nhật thông tin người dùng
 // @access Private
-router.put("/:_id", verifyToken, async (req, res) => {
+router.put("/", verifyToken, async (req, res) => {
   const { full_name, dob, email, phone_number, gender } = req.body;
   try {
     const user = await User.findByIdAndUpdate(
-      req.params._id,
+      req.userId,
       {
         full_name,
         dob,

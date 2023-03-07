@@ -98,7 +98,11 @@ router.post("/register", async (req, res) => {
 
     // Trả về token
     const accessToken = jwt.sign(
-      { userId: newUser._id },
+      {
+        userId: newUser._id,
+        userFullname: newUser.full_name,
+        userEmail: newUser.email,
+      },
       process.env.ACCESS_TOKEN_SECRET
     );
 
@@ -199,7 +203,11 @@ router.post("/login", async (req, res) => {
 
     // Trả về token
     const accessToken = jwt.sign(
-      { userId: user._id },
+      {
+        userId: user._id,
+        userFullname: user.full_name,
+        userEmail: user.email,
+      },
       process.env.ACCESS_TOKEN_SECRET
     );
 
