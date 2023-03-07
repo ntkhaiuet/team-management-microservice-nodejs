@@ -3,11 +3,15 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
+const session = require("express-session");
+const passport = require("passport");
+const passportConfig = require("./middleware/passport");
 require("dotenv").config();
 
 const userRouter = require("./routes/user");
 const authRouter = require("./routes/auth");
 const emailRouter = require("./routes/email");
+const googleRouter = require("./routes/google");
 
 // Kết nối DB
 const connectDB = async () => {
@@ -59,9 +63,16 @@ const options = {
 const specs = swaggerJsDoc(options);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs, options));
 
+app.use(session({ secret: "secret", resave: true, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+passportConfig(passport);
+
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/email", emailRouter);
+app.use("/api/google", googleRouter);
 
 const PORT = 3000;
 
