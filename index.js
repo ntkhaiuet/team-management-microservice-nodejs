@@ -48,8 +48,7 @@ const options = {
     info: {
       title: "User API",
       version: "1.0.0",
-      description:
-        "User API documentation. PUT /api/user/{_id} và POST /api/email/send cần có accessToken. accessToken nhận được khi đăng ký hoặc đăng nhập. Ở client thêm Authorization: Bearer {accessToken} vào header",
+      description: `User API documentation. PUT /api/user/{_id} và POST /api/email/send cần có accessToken. accessToken nhận được khi đăng ký hoặc đăng nhập. Ở client thêm Authorization: Bearer {accessToken} vào header. Phần Googles không thể test trên UI này, truy cập trực tiếp bằng trình duyệt với Server: "http://${process.env.SERVER}.nip.io/..."`,
     },
     servers: [
       {
