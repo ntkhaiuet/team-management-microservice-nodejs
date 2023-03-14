@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const argon2 = require("argon2");
-const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const User = require("../models/User");
@@ -248,7 +247,7 @@ router.get("/", verifyToken, async (req, res) => {
  *                type: String
  *    responses:
  *      200:
- *        description: Trả về thông tin của người dùng sau khi cập nhật, nếu thay đổi email thì accessToken sẽ khác null, cần verify lại email
+ *        description: Trả về thông tin của người dùng sau khi cập nhật
  *        content:
  *          application/json:
  *            schema:
@@ -279,7 +278,7 @@ router.get("/", verifyToken, async (req, res) => {
  *                      type: String
  *                      default: Male
  *      400:
- *        description: Thiếu trường bắt buộc/Không tìm thấy người dùng
+ *        description: Thiếu trường bắt buộc/Không tìm thấy người dùng/Email đã tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -288,7 +287,7 @@ router.get("/", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Thiếu trường bắt buộc/Không tìm thấy người dùng
+ *                  default: Thiếu trường bắt buộc/Không tìm thấy người dùng/Email đã tồn tại
  *      500:
  *        description: Internal server error
  *        content:
