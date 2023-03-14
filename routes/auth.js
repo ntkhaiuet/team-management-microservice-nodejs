@@ -149,7 +149,7 @@ router.post("/register", async (req, res) => {
  *                accessToken:
  *                  type: String
  *      400:
- *        description: Thiếu trường bắt buộc hoặc Email/password không chính xác
+ *        description: Thiếu trường bắt buộc/Email, password không chính xác/Tài khoản chưa được xác thực
  *        content:
  *          application/json:
  *            schema:
@@ -158,7 +158,7 @@ router.post("/register", async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Thiếu trường bắt buộc hoặc Email/password không chính xác
+ *                  default: Thiếu trường bắt buộc/Email, password không chính xác/Tài khoản chưa được xác thực
  *      500:
  *        description: Internal server error
  *        content:
@@ -191,6 +191,13 @@ router.post("/login", async (req, res) => {
       return res
         .status(400)
         .json({ succes: false, message: "Email/password không chính xác" });
+    }
+
+    // Kiểm tra xác thực tài khoản
+    if (!user.email_verified) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Tài khoản chưa được xác thực" });
     }
 
     // Kiểm tra mật khẩu người dùng nhập vào và mật khẩu lưu trong DB

@@ -278,7 +278,7 @@ router.get("/", verifyToken, async (req, res) => {
  *                      type: String
  *                      default: Male
  *      400:
- *        description: Không tìm thấy người dùng
+ *        description: Thiếu trường bắt buộc/Không tìm thấy người dùng
  *        content:
  *          application/json:
  *            schema:
