@@ -118,7 +118,7 @@ router.post("/change_password", verifyToken, async function (req, res) {
   const { email, password, new_password } = req.body;
 
   //   Xác thực cơ bản
-  if ((!email, !password || !new_password)) {
+  if (!email || !password || !new_password) {
     return res
       .status(400)
       .json({ succes: false, message: "Thiếu trường bắt buộc" });
@@ -251,7 +251,32 @@ router.get("/", verifyToken, async (req, res) => {
  *        content:
  *          application/json:
  *            schema:
- *                $ref: '#/components/schemas/User'
+ *              type: object
+ *              properties:
+ *                success:
+ *                  type: Boolean
+ *                  default: true
+ *                message:
+ *                  type: String
+ *                  default: Cập nhật thông tin thành công
+ *                user:
+ *                  type: object
+ *                  properties:
+ *                    full_name:
+ *                      type: String
+ *                      default: Nguyễn Thế Khải
+ *                    email:
+ *                      type: String
+ *                      default: ntkhaiuet@gmail.com
+ *                    dob:
+ *                      type: String
+ *                      default: 31/10/2001
+ *                    phone_number:
+ *                      type: String
+ *                      default: "0376269482"
+ *                    gender:
+ *                      type: String
+ *                      default: Male
  *      400:
  *        description: Không tìm thấy người dùng
  *        content:
@@ -262,7 +287,7 @@ router.get("/", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Không tìm thấy người dùng
+ *                  default: Thiếu trường bắt buộc/Không tìm thấy người dùng
  *      500:
  *        description: Internal server error
  *        content:
@@ -280,6 +305,14 @@ router.get("/", verifyToken, async (req, res) => {
 // @access Private
 router.put("/", verifyToken, async (req, res) => {
   const { full_name, dob, email, phone_number, gender } = req.body;
+
+  //   Xác thực cơ bản
+  if (!full_name || !dob || !email || !phone_number || !gender) {
+    return res
+      .status(400)
+      .json({ succes: false, message: "Thiếu trường bắt buộc" });
+  }
+
   try {
     const user = await User.findByIdAndUpdate(
       req.userId,
@@ -297,7 +330,17 @@ router.put("/", verifyToken, async (req, res) => {
         .status(400)
         .json({ success: false, message: "Không tìm thấy người dùng" });
     }
-    res.json(user);
+    res.json({
+      success: true,
+      message: "Cập nhật thông tin thành công",
+      user: {
+        full_name: user.full_name,
+        dob: user.dob,
+        email: user.email,
+        phone_number: user.phone_number,
+        gender: user.gender,
+      },
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Internal server error" });
