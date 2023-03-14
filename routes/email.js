@@ -167,8 +167,15 @@ router.get("/verify/:token", async (req, res) => {
  *  post:
  *    summary: Gửi email xác minh
  *    tags: [Emails]
- *    security:
- *      - bearerAuth: []
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              email:
+ *                type: String
  *    responses:
  *      200:
  *        description: Đã gửi email xác minh tới email của bạn
@@ -208,9 +215,9 @@ router.get("/verify/:token", async (req, res) => {
  */
 // @route POST api/email/send
 // @desc Gửi email xác thực
-// @access Private
-router.post("/send", verifyToken, async (req, res) => {
-  const email = req.userEmail;
+// @access Public
+router.post("/send", async (req, res) => {
+  const email = req.body.email;
 
   //   Xác thực cơ bản
   if (!email) {

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const argon2 = require("argon2");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const User = require("../models/User");
@@ -247,7 +248,7 @@ router.get("/", verifyToken, async (req, res) => {
  *                type: String
  *    responses:
  *      200:
- *        description: Trả về thông tin của người dùng sau khi cập nhật
+ *        description: Trả về thông tin của người dùng sau khi cập nhật, nếu thay đổi email thì accessToken sẽ khác null, cần verify lại email
  *        content:
  *          application/json:
  *            schema:
@@ -314,31 +315,44 @@ router.put("/", verifyToken, async (req, res) => {
   }
 
   try {
-    const user = await User.findByIdAndUpdate(
-      req.userId,
-      {
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
+    }
+
+    // Kiểm tra email tồn tại
+    if (email !== user.email) {
+      const userWithEmail = await User.findOne({ email });
+
+      // Email đã được sử dụng
+      if (userWithEmail) {
+        return res
+          .status(400)
+          .json({ succes: false, message: "Email đã tồn tại" });
+      }
+      user.email_verified = false;
+    }
+
+    // Cập nhật thông tin vào DB
+    user.full_name = full_name;
+    user.dob = dob;
+    user.email = email;
+    user.phone_number = phone_number;
+    user.gender = gender;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Cập nhật thông tin thành công",
+      user: {
         full_name,
         dob,
         email,
         phone_number,
         gender,
-      },
-      { new: true }
-    );
-    if (!user) {
-      res
-        .status(400)
-        .json({ success: false, message: "Không tìm thấy người dùng" });
-    }
-    res.json({
-      success: true,
-      message: "Cập nhật thông tin thành công",
-      user: {
-        full_name: user.full_name,
-        dob: user.dob,
-        email: user.email,
-        phone_number: user.phone_number,
-        gender: user.gender,
       },
     });
   } catch (error) {
