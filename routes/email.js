@@ -5,6 +5,7 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const generator = require("generate-password");
 const argon2 = require("argon2");
+const path = require("path");
 require("dotenv").config();
 
 const User = require("../models/User");
@@ -101,25 +102,17 @@ function sendResetPasswordEmail(email) {
  *      200:
  *        description: Xác minh email thành công
  *        content:
- *          application/json:
+ *          text/plain:
  *            schema:
- *              type: object
- *              properties:
- *                success:
- *                  default: true
- *                message:
- *                  default: Xác minh email thành công
+ *              type: string
+ *              example: Xác minh email thành công! Địa chỉ email của bạn đã được xác minh thành công, bạn có thể đóng cửa sổ này ngay bây giờ.
  *      404:
  *        description: Token không hợp lệ
  *        content:
- *          application/json:
+ *          text/plain:
  *            schema:
- *              type: object
- *              properties:
- *                success:
- *                  default: false
- *                message:
- *                  default: Token không hợp lệ
+ *              type: string
+ *              example: Xác minh email thất bại! Token không hợp lệ, vui lòng thử lại.
  *      500:
  *        description: Internal server error
  *        content:
@@ -146,15 +139,12 @@ router.get("/verify/:token", async (req, res) => {
       // Token không hợp lệ
       return res
         .status(404)
-        .json({ success: false, message: "Token không hợp lệ" });
+        .sendFile(path.dirname(__dirname) + "/views/verifyEmailError.html");
     }
     // Cập nhật trạng thái đã xác minh
     user.email_verified = true;
     await user.save();
-    res.json({
-      success: true,
-      message: "Xác minh email thành công",
-    });
+    return res.sendFile(path.dirname(__dirname) + "/views/verifyEmail.html");
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Internal server error" });

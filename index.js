@@ -46,9 +46,9 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "User API",
+      title: "API Documentation",
       version: "1.0.0",
-      description: `User API documentation. PUT /api/user/{_id} và POST /api/email/send cần có accessToken. accessToken nhận được khi đăng ký hoặc đăng nhập. Ở client thêm Authorization: Bearer {accessToken} vào header. Phần Googles không thể test trên UI này, truy cập trực tiếp bằng trình duyệt với Server: "http://${process.env.SERVER}.nip.io/..."`,
+      description: `API documentation. Thay đổi mật khẩu và Cập nhật thông tin người dùng cần có accessToken. accessToken nhận được khi đăng ký hoặc đăng nhập. Ở client thêm Authorization: Bearer {accessToken} vào headers. Phần Googles không thể test trên UI này, truy cập trực tiếp bằng trình duyệt với Server: "http://${process.env.SERVER}.nip.io/..."`,
     },
     servers: [
       {
