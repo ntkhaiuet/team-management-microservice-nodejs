@@ -25,8 +25,8 @@ function sendVerificationEmail(email, token) {
     const mailOptions = {
       from: process.env.EMAIL,
       to: email,
-      subject: "Xác minh email",
-      text: `Truy cập vào đường dẫn sau để xác minh email của bạn: http://${process.env.SERVER}/api/email/verify/${token}`,
+      subject: "Xác minh tài khoản tại ...",
+      html: `Truy cập vào <a href="http://${process.env.SERVER}/api/email/verify/${token}">đường dẫn</a> để xác minh tài khoản của bạn.`,
     };
 
     transporter.sendMail(mailOptions, function (error, info) {
@@ -106,7 +106,7 @@ function sendResetPasswordEmail(email) {
  *            schema:
  *              type: string
  *              example: Xác minh email thành công! Địa chỉ email của bạn đã được xác minh thành công, bạn có thể đóng cửa sổ này ngay bây giờ.
- *      404:
+ *      400:
  *        description: Token không hợp lệ
  *        content:
  *          text/plain:
@@ -138,7 +138,7 @@ router.get("/verify/:token", async (req, res) => {
     if (!user) {
       // Token không hợp lệ
       return res
-        .status(404)
+        .status(400)
         .sendFile(path.dirname(__dirname) + "/views/verifyEmailError.html");
     }
     // Cập nhật trạng thái đã xác minh
