@@ -25,7 +25,7 @@ function sendVerificationEmail(email, token) {
     const mailOptions = {
       from: process.env.EMAIL,
       to: email,
-      subject: "Xác minh tài khoản tại ...",
+      subject: "Xác minh tài khoản tại TeamManagement",
       html: `Truy cập vào <a href="http://${process.env.SERVER}/api/email/verify/${token}">đường dẫn</a> để xác minh tài khoản của bạn.`,
     };
 

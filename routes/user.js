@@ -258,6 +258,9 @@ router.get("/", verifyToken, async (req, res) => {
  *                message:
  *                  type: String
  *                  default: Cập nhật thông tin thành công
+ *                isChangeEmail:
+ *                  type: Boolean
+ *                  default: true
  *                user:
  *                  type: object
  *                  properties:
@@ -305,6 +308,8 @@ router.get("/", verifyToken, async (req, res) => {
 router.put("/", verifyToken, async (req, res) => {
   const { full_name, dob, email, phone_number, gender } = req.body;
 
+  var isChangeEmail = false;
+
   //   Xác thực cơ bản
   if (!full_name || !dob || !email || !phone_number || !gender) {
     return res
@@ -332,6 +337,7 @@ router.put("/", verifyToken, async (req, res) => {
           .json({ succes: false, message: "Email đã tồn tại" });
       }
       user.email_verified = false;
+      isChangeEmail = true;
     }
 
     // Cập nhật thông tin vào DB
@@ -345,6 +351,7 @@ router.put("/", verifyToken, async (req, res) => {
     res.json({
       success: true,
       message: "Cập nhật thông tin thành công",
+      isChangeEmail,
       user: {
         full_name,
         dob,
