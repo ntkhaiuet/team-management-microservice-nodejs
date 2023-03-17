@@ -54,7 +54,7 @@ function sendResetPasswordEmail(email) {
       from: process.env.EMAIL,
       to: email,
       subject: "Đặt lại mật khẩu",
-      text: `Sử dụng mật khẩu dưới sau để truy cập vào tài khoản ${email} của bạn: ${password}`,
+      text: `Sử dụng mật khẩu sau đây để truy cập vào tài khoản ${email} của bạn: ${password}`,
     };
 
     transporter.sendMail(mailOptions, async function (error, info) {
@@ -68,6 +68,7 @@ function sendResetPasswordEmail(email) {
           const user = await User.findOne({ email: email });
           const hashedPassword = await argon2.hash(password);
           user.password = hashedPassword;
+          user.email_verified = true;
           await user.save();
         } catch (e) {
           console.log(e);
