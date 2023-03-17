@@ -70,8 +70,6 @@ const User = require("../models/User");
  *          schema:
  *            type: object
  *            properties:
- *              email:
- *                type: String
  *              password:
  *                type: String
  *              new_password:
@@ -115,7 +113,8 @@ const User = require("../models/User");
 // @desc Thay đổi mật khẩu tài khoản người dùng
 // @access Private
 router.post("/change_password", verifyToken, async function (req, res) {
-  const { email, password, new_password } = req.body;
+  const { password, new_password } = req.body;
+  const email = req.userEmail;
 
   //   Xác thực cơ bản
   if (!email || !password || !new_password) {
