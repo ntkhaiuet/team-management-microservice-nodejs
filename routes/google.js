@@ -92,7 +92,8 @@ router.get(
 
       req.session.destroy();
 
-      res.redirect("/api/google/token");
+      // res.redirect("/api/google/token");
+      res.send("<script>window.close();</script >");
     } catch (error) {
       console.log(error);
       res
