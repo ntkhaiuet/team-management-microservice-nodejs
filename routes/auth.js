@@ -17,7 +17,7 @@ const User = require("../models/User");
  * @swagger
  * /api/auth/register:
  *  post:
- *    summary: Đăng ký
+ *    summary: Đăng ký tài khoản
  *    tags: [Auths]
  *    requestBody:
  *      required: true
@@ -44,8 +44,6 @@ const User = require("../models/User");
  *                  default: true
  *                message:
  *                  default: Đăng ký thành công
- *                accessToken:
- *                  type: String
  *      400:
  *        description: Thiếu trường bắt buộc hoặc email đã tồn tại
  *        content:
@@ -70,7 +68,7 @@ const User = require("../models/User");
  *                  default: Internal server error
  */
 // @route POST api/auth/register
-// @desc Register user
+// @desc Đăng ký tài khoản
 // @access Public
 router.post("/register", async (req, res) => {
   const { full_name, email, password } = req.body;
@@ -96,20 +94,9 @@ router.post("/register", async (req, res) => {
     const newUser = new User({ full_name, email, password: hashedPassword });
     await newUser.save();
 
-    // Trả về token
-    const accessToken = jwt.sign(
-      {
-        userId: newUser._id,
-        userFullname: newUser.full_name,
-        userEmail: newUser.email,
-      },
-      process.env.ACCESS_TOKEN_SECRET
-    );
-
     res.json({
       success: true,
       message: "Đăng ký thành công",
-      accessToken,
     });
   } catch (error) {
     console.log(error);
@@ -121,7 +108,7 @@ router.post("/register", async (req, res) => {
  * @swagger
  * /api/auth/login:
  *  post:
- *    summary: Đăng nhập
+ *    summary: Đăng nhập. Yêu cầu tài khoản phải được xác thực sau đó trả về accessToken
  *    tags: [Auths]
  *    requestBody:
  *      required: true
@@ -172,7 +159,7 @@ router.post("/register", async (req, res) => {
  *                  default: Internal server error
  */
 // @route POST api/auth/login
-// @desc Login user
+// @desc Đăng nhập. Yêu cầu tài khoản phải được xác thực sau đó trả về accessToken
 // @access Public
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;

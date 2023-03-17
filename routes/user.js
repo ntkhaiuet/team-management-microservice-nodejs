@@ -59,7 +59,7 @@ const User = require("../models/User");
  * @swagger
  * /api/user/change_password:
  *  post:
- *    summary: Thay đổi mật khẩu
+ *    summary: Thay đổi mật khẩu tài khoản người dùng
  *    tags: [Users]
  *    security:
  *      - bearerAuth: []
@@ -112,7 +112,7 @@ const User = require("../models/User");
  *                  default: Internal server error
  */
 // @route POST api/user/change_password
-// @desc Đổi mật khẩu tài khoản người dùng
+// @desc Thay đổi mật khẩu tài khoản người dùng
 // @access Private
 router.post("/change_password", verifyToken, async function (req, res) {
   const { email, password, new_password } = req.body;
@@ -157,7 +157,7 @@ router.post("/change_password", verifyToken, async function (req, res) {
  * @swagger
  * /api/user:
  *  get:
- *    summary: Nhận thông tin người dùng
+ *    summary: Nhận thông tin người dùng hiện tại
  *    tags: [Users]
  *    security:
  *      - bearerAuth: []
@@ -192,7 +192,7 @@ router.post("/change_password", verifyToken, async function (req, res) {
  *                  default: Internal server error
  */
 // @route GET api/user
-// @desc Nhận thông tin người dùng
+// @desc Nhận thông tin người dùng hiện tại
 // @access Public
 router.get("/", verifyToken, async (req, res) => {
   try {
@@ -224,7 +224,7 @@ router.get("/", verifyToken, async (req, res) => {
  * @swagger
  * /api/user:
  *  put:
- *    summary: Cập nhật thông tin người dùng
+ *    summary: Cập nhật thông tin người dùng. Nếu thay đổi email thì cần xác thực email mới, sau đó mới đăng nhập được
  *    tags: [Users]
  *    security:
  *      - bearerAuth: []

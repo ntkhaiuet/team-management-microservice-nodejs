@@ -39,7 +39,7 @@ router.get(
  * @swagger
  * /api/google/callback:
  *  get:
- *    summary: Lưu thông tin tài khoản Google của người dùng vào DB, trả về accessToken
+ *    summary: Lưu thông tin tài khoản Google của người dùng vào DB, đóng cửa sổ khi đăng nhập thành công.
  *    tags: [Googles]
  */
 // @route GET api/google/callback
@@ -110,7 +110,7 @@ router.get(
  * @swagger
  * /api/google/token:
  *  get:
- *    summary: Trả về accessToken khi đăng nhập bằng google thành công
+ *    summary: Trả về accessToken khi đăng nhập bằng Google thành công. Chỉ nhận được accessToken 1 lần duy nhất, từ lần thứ 2 truy cập API sẽ báo lỗi 500
  *    tags: [Googles]
  *    responses:
  *      200:
@@ -140,7 +140,7 @@ router.get(
  *                  default: Internal server error
  */
 // @route GET api/google/token
-// @desc Trả về accessToken khi đăng nhập bằng Google thành công
+// @desc Trả về accessToken khi đăng nhập bằng Google thành công. Chỉ nhận được accessToken 1 lần duy nhất, từ lần thứ 2 truy cập API sẽ báo lỗi 500
 // @access Public
 router.get("/token", function (req, res) {
   if (!accessToken) {

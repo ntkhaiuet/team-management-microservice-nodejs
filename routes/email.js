@@ -89,7 +89,7 @@ function sendResetPasswordEmail(email) {
  * @swagger
  * /api/email/verify/{token}:
  *  get:
- *    summary: Xác minh email
+ *    summary: Xác minh email. Người dùng truy cập vào đường dẫn để xác minh tài khoản.
  *    tags: [Emails]
  *    parameters:
  *      - in: path
@@ -126,7 +126,7 @@ function sendResetPasswordEmail(email) {
  *                  default: Internal server error
  */
 // @route GET api/email/verify/:token
-// @desc Xác thực email
+// @desc Xác minh email. Người dùng truy cập vào đường dẫn để xác minh tài khoản.
 // @access Public
 router.get("/verify/:token", async (req, res) => {
   const token = req.params.token;
@@ -155,7 +155,7 @@ router.get("/verify/:token", async (req, res) => {
  * @swagger
  * /api/email/send:
  *  post:
- *    summary: Gửi email xác minh
+ *    summary: Gửi email xác minh chứa đường dẫn để người dùng có thể xác minh tài khoản khi nhấn vào
  *    tags: [Emails]
  *    requestBody:
  *      required: true
@@ -204,7 +204,7 @@ router.get("/verify/:token", async (req, res) => {
  *                  default: Internal server error
  */
 // @route POST api/email/send
-// @desc Gửi email xác thực
+// @desc Gửi email xác minh chứa đường dẫn để người dùng có thể xác minh tài khoản khi nhấn vào
 // @access Public
 router.post("/send", async (req, res) => {
   const email = req.body.email;
@@ -248,7 +248,7 @@ router.post("/send", async (req, res) => {
  * @swagger
  * /api/email/reset_password:
  *  post:
- *    summary: Gửi email đặt lại mật khẩu
+ *    summary: Gửi email đặt lại mật khẩu. Gửi 1 mật khẩu mới được tạo ngẫu nhiên qua email của người dùng
  *    tags: [Emails]
  *    requestBody:
  *      required: true
@@ -295,7 +295,7 @@ router.post("/send", async (req, res) => {
  *                  default: Internal server error
  */
 // @route GET api/email/resetpassword
-// @desc Gửi email đặt lại mật khẩu
+// @desc Gửi email đặt lại mật khẩu. Gửi 1 mật khẩu mới được tạo ngẫu nhiên qua email của người dùng
 // @access Public
 router.post("/reset_password", async function (req, res) {
   const email = req.body.email;
