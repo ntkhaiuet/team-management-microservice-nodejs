@@ -145,10 +145,14 @@ router.get("/token", function (req, res) {
       .status(500)
       .json({ success: false, message: "Internal Server Error" });
   }
+  // Lưu accessToken vào biến tạm và xóa accessToken
+  var tempAccessToken = accessToken;
+  accessToken = null;
+
   res.json({
     success: true,
     message: "Tạo accessToken thành công",
-    accessToken: accessToken,
+    accessToken: tempAccessToken,
   });
 });
 
