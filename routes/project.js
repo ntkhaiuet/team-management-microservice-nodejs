@@ -283,4 +283,73 @@ router.put("/:id", verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/project/list:
+ *  get:
+ *    summary: Lấy list project của người dùng
+ *    tags: [Projects]
+ *    security:
+ *      - bearerAuth: []
+ *    requestBody:
+ *      required: false
+ *    responses:
+ *      200:
+ *        description: Lấy ra danh sách thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Lấy danh sách thành công
+ *      400:
+ *        description: Thiếu trường bắt buộc/Email không tồn tại/Mật khẩu không đúng
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Thiếu trường bắt buộc/Email không tồn tại/Mật khẩu không đúng
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
+// @route GET api/project/list
+// @desc Lấy list project của người dùng
+// @access Private
+router.get("/list", verifyToken, async function (req, res) {
+  try {
+    const user = await User.findById(req.userId)
+      .populate("projects.project")
+      .exec();
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
+    }
+    let projects = user.projects;
+    res.json({
+      success: true,
+      message: "Lấy danh sách thành công",
+      data: projects
+    })
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 module.exports = router;
