@@ -35,6 +35,17 @@ const User = require("../models/User");
  *          type: String
  *        token:
  *          type: String
+ *        projects:
+ *          type: Array
+ *          items:
+ *            type: object
+ *            properties:
+ *              project:
+ *                type: string
+ *              role:
+ *                type: string
+ *                enum: ["Leader", "Reviewer", "Member"]
+ *                default: "Member"
  *      example:
  *        _id: 64045186b72087718b17a908
  *        full_name: Nguyen The Khai
@@ -45,7 +56,7 @@ const User = require("../models/User");
  *        phone_number: '0376269482'
  *        gender: Male
  *        token: b394b763b5591dcb3f362524c22c081b01db2370
- *
+ *        projects: [{project: "6422436f9574d6d0650f0059", role: "Leader"}]
  */
 
 /**
@@ -197,7 +208,7 @@ router.get("/", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) {
-      res
+      return res
         .status(400)
         .json({ success: false, message: "Không tìm thấy người dùng" });
     }

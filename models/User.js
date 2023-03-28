@@ -11,6 +11,16 @@ const UserSchema = new Schema(
     phone_number: { type: String, default: null },
     gender: { type: String, default: null },
     token: { type: String, default: null },
+    projects: [
+      {
+        project: { type: Schema.Types.ObjectId, ref: "Project" },
+        role: {
+          type: String,
+          enum: ["Leader", "Reviewer", "Member"],
+          default: "Member",
+        },
+      },
+    ],
   },
   {
     versionKey: false,
