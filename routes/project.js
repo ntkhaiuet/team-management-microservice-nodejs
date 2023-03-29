@@ -159,7 +159,7 @@ router.post("/create", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /api/project/{id}:
+ * /api/project/edit/{id}:
  *  put:
  *    summary: Cập nhật thông tin project (Hiện tại chỉ mới thay đổi được tên project)
  *    tags: [Projects]
@@ -233,10 +233,10 @@ router.post("/create", verifyToken, async (req, res) => {
  *                message:
  *                  default: Internal server error
  */
-// @route PUT api/project/edit
+// @route PUT api/project/edit/:id
 // @desc Cập nhật thông tin project (Hiện tại chỉ mới thay đổi được tên project)
 // @access Private
-router.put("/:id", verifyToken, async (req, res) => {
+router.put("/edit/:id", verifyToken, async (req, res) => {
   const { name } = req.body;
   const projectId = req.params.id;
 
@@ -382,6 +382,98 @@ router.get("/list", verifyToken, async function (req, res) {
       success: true,
       message: "Lấy danh sách thành công",
       data: projects,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/project/delete/{id}:
+ *  delete:
+ *    summary: Xóa 1 project
+ *    tags: [Projects]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Xóa 1 project theo _id của project
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: ID của project
+ *    responses:
+ *      200:
+ *        description: Xóa project thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Xóa project thành công
+ *      400:
+ *        description: ProjectId không đúng hoặc người dùng không có quyền xóa project
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: ProjectId không đúng hoặc người dùng không có quyền xóa project
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
+// @route DELETE api/project/delete/:id
+// @desc Xóa 1 project
+// @access Private
+router.delete("/delete/:id", verifyToken, async (req, res) => {
+  const projectId = req.params.id;
+
+  try {
+    // Xóa project có _id là projectId, yêu cầu người dùng hiện tại là Leader của project đó
+    const deleteProject = await Project.findOneAndDelete({
+      _id: projectId,
+      "users.user": req.userId,
+      "users.role": "Leader",
+    });
+
+    // Nếu xóa không thành công
+    if (!deleteProject) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "ProjectId không đúng hoặc người dùng không có quyền xóa project",
+      });
+    }
+
+    // Xóa project trong collection users
+    const user = await User.findById(req.userId);
+    let index = user.projects.findIndex(
+      (project) => project.project === projectId
+    );
+    user.projects.splice(index, 1);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Xóa project thành công",
     });
   } catch (error) {
     console.log(error);
