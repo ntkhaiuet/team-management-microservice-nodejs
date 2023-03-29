@@ -18,8 +18,8 @@ const UserSchema = new Schema(
         project: { type: Schema.Types.ObjectId, ref: "Project" },
         role: {
           type: String,
-          enum: ["Leader", "Reviewer", "Member"],
-          default: "Member",
+          enum: ["Leader", "Reviewer", "Member", "Guest"],
+          default: "Guest",
         },
       },
     ],

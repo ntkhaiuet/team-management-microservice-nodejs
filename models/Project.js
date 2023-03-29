@@ -16,8 +16,8 @@ const ProjectSchema = new Schema(
         user: { type: Schema.Types.ObjectId, ref: "User" },
         role: {
           type: String,
-          enum: ["Leader", "Reviewer", "Member"],
-          default: "Member",
+          enum: ["Leader", "Reviewer", "Member", "Guest"],
+          default: "Guest",
         },
       },
     ],
