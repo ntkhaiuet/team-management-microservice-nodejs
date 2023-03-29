@@ -46,6 +46,8 @@ const User = require("../models/User");
  *                type: string
  *                enum: ["Leader", "Reviewer", "Member"]
  *                default: "Member"
+ *        createdAt:
+ *          type: String
  *      example:
  *        _id: 64045186b72087718b17a908
  *        full_name: Nguyen The Khai
@@ -57,6 +59,7 @@ const User = require("../models/User");
  *        gender: Male
  *        token: b394b763b5591dcb3f362524c22c081b01db2370
  *        projects: [{project: "6422436f9574d6d0650f0059", role: "Leader"}]
+ *        createdAt: 10:56:27 29/03/2023
  */
 
 /**

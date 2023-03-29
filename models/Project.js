@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
+const formattedDate = require("../middleware/formatDate");
+
 const ProjectSchema = new Schema(
   {
     name: { type: String, required: true },
@@ -19,7 +21,7 @@ const ProjectSchema = new Schema(
         },
       },
     ],
-    createdAt: { type: Date, default: Date.now() },
+    createdAt: { type: String, default: formattedDate },
   },
   {
     versionKey: false,

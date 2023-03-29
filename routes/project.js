@@ -34,13 +34,13 @@ const Project = require("../models/Project");
  *                enum: ["Leader", "Reviewer", "Member"]
  *                default: "Member"
  *        createdAt:
- *          type: Date
+ *          type: String
  *      example:
  *        _id: 6422436f9574d6d0650f0059
  *        name: Project cua Khai
  *        status: Processing
  *        users: [{user: "64106a4a65047e0dff8ecc81", role: "Leader"}]
- *        createdAt: 2023-03-28T01:30:17.781+00:00
+ *        createdAt: 10:56:27 29/03/2023
  */
 
 /**
