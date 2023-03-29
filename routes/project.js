@@ -120,9 +120,7 @@ router.post("/create", verifyToken, async (req, res) => {
 
   try {
     // Kiểm tra người dùng tồn tại và lấy các project của người dùng
-    const user = await User.findById(req.userId)
-      .populate("projects.project")
-      .exec();
+    const user = await User.findById(req.userId).populate("projects.project");
     if (!user) {
       return res
         .status(400)
@@ -291,8 +289,6 @@ router.put("/:id", verifyToken, async (req, res) => {
  *    tags: [Projects]
  *    security:
  *      - bearerAuth: []
- *    requestBody:
- *      required: false
  *    responses:
  *      200:
  *        description: Lấy ra danh sách thành công
@@ -305,8 +301,46 @@ router.put("/:id", verifyToken, async (req, res) => {
  *                  default: true
  *                message:
  *                  default: Lấy danh sách thành công
+ *                data:
+ *                  default:
+ *                    [
+ *                      {
+ *                        "project": {
+ *                          "_id": "6422436f9574d6d0650f0059",
+ *                          "name": "Project cua Khai Khai Khai",
+ *                          "status": "Processing",
+ *                          "users": [
+ *                            {
+ *                              "user": "64106a4a65047e0dff8ecc81",
+ *                              "role": "Leader",
+ *                              "_id": "6422436f9574d6d0650f005a"
+ *                            }
+ *                          ],
+ *                          "createdAt": "2023-03-28T01:30:17.781Z"
+ *                        },
+ *                        "role": "Leader",
+ *                        "_id": "6422436f9574d6d0650f005b"
+ *                      },
+ *                      {
+ *                        "project": {
+ *                          "_id": "64224e85853784f14a290f37",
+ *                          "name": "Project cua Khai ne",
+ *                          "status": "Processing",
+ *                          "users": [
+ *                            {
+ *                              "user": "64106a4a65047e0dff8ecc81",
+ *                              "role": "Leader",
+ *                              "_id": "64224e85853784f14a290f38"
+ *                            }
+ *                          ],
+ *                          "createdAt": "2023-03-28T02:17:51.697Z"
+ *                        },
+ *                        "role": "Leader",
+ *                        "_id": "64224e85853784f14a290f39"
+ *                      }
+ *                    ]
  *      400:
- *        description: Thiếu trường bắt buộc/Email không tồn tại/Mật khẩu không đúng
+ *        description: Không tìm thấy người dùng
  *        content:
  *          application/json:
  *            schema:
@@ -315,7 +349,7 @@ router.put("/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Thiếu trường bắt buộc/Email không tồn tại/Mật khẩu không đúng
+ *                  default: Không tìm thấy người dùng
  *      500:
  *        description: Internal server error
  *        content:
@@ -333,23 +367,26 @@ router.put("/:id", verifyToken, async (req, res) => {
 // @access Private
 router.get("/list", verifyToken, async function (req, res) {
   try {
-    const user = await User.findById(req.userId)
-      .populate("projects.project")
-      .exec();
+    // Kiểm tra người dùng tồn tại và lấy các project của người dùng
+    const user = await User.findById(req.userId).populate("projects.project");
     if (!user) {
       return res
         .status(400)
         .json({ success: false, message: "Không tìm thấy người dùng" });
     }
-    let projects = user.projects;
+
+    // Lưu các project vào hằng projects
+    const projects = user.projects;
+
     res.json({
       success: true,
       message: "Lấy danh sách thành công",
-      data: projects
-    })
+      data: projects,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
+
 module.exports = router;
