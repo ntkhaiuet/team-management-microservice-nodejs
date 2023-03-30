@@ -4,6 +4,7 @@ const verifyToken = require("../middleware/auth");
 
 const User = require("../models/User");
 const Project = require("../models/Project");
+const ProjectInvite = require("../models/ProjectInvite");
 
 /**
  * @swagger

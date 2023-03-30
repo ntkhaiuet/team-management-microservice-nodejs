@@ -3,17 +3,12 @@ const Schema = mongoose.Schema;
 
 const formattedDate = require("../middleware/formatDate");
 
-const ProjectSchema = new Schema(
+const ProjectInviteSchema = new Schema(
   {
-    name: { type: String, required: true },
-    status: {
-      type: String,
-      enum: ["Processing", "Completed"],
-      default: "Processing",
-    },
+    projectId: { type: Schema.Types.ObjectId, require: true },
     users: [
       {
-        user: { type: Schema.Types.ObjectId, ref: "User" },
+        email: { type: String, unique: true },
         role: {
           type: String,
           enum: ["Leader", "Reviewer", "Member"],
@@ -28,4 +23,4 @@ const ProjectSchema = new Schema(
   }
 );
 
-module.exports = mongoose.model("Project", ProjectSchema);
+module.exports = mongoose.model("ProjectInvite", ProjectInviteSchema);
