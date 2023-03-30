@@ -13,6 +13,7 @@ const authRouter = require("./routes/auth");
 const emailRouter = require("./routes/email");
 const googleRouter = require("./routes/google");
 const projectRouter = require("./routes/project");
+const planningRouter = require("./routes/planning");
 
 // Kết nối DB
 const connectDB = async () => {
@@ -74,6 +75,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/email", emailRouter);
 app.use("/api/google", googleRouter);
 app.use("/api/project", projectRouter);
+app.use("/api/planning", planningRouter);
 
 const PORT = 3000;
 

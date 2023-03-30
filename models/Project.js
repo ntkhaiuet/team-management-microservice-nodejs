@@ -11,6 +11,17 @@ const ProjectSchema = new Schema(
       enum: ["Processing", "Completed"],
       default: "Processing",
     },
+    plan: {
+      topic: { type: String },
+      target: { type: String },
+      timeline: [
+        {
+          stage: { type: String, unique: true },
+          note: { type: String },
+          deadline: { type: String },
+        },
+      ],
+    },
     users: [
       {
         user: { type: Schema.Types.ObjectId, ref: "User" },
