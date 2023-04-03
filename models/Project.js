@@ -32,6 +32,16 @@ const ProjectSchema = new Schema(
         },
       },
     ],
+    invite: [
+      {
+        email: { type: String },
+        role: {
+          type: String,
+          enum: ["Leader", "Reviewer", "Member"],
+          default: "Member",
+        },
+      },
+    ],
     createdAt: { type: String, default: formattedDate },
   },
   {
