@@ -482,4 +482,125 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/project/{id}/invite:
+ *  put:
+ *    summary: Mời thành viên tham gia vào project
+ *    tags: [Projects]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Mời thành viên tham gia vào project, chỉ Leader mới có quyền mời thành viên tham gia vào project
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: ID của project
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              email:
+ *                type: String
+ *                default: example@gmail.com
+ *              role:
+ *                type: String
+ *                default: Member
+ *    responses:
+ *      200:
+ *        description: Cập nhật thông tin project thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Mời thành viên tham gia project thành công
+ *      400:
+ *        description: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
+ *      500:
+ *        description: Internal server error
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Internal server error
+ */
+// @route PUT api/project/:id/invite
+// @desc Mời các thành viên tham gia project
+// @access Private
+router.put("/:id/invite", verifyToken, async (req, res) => {
+  const { email } = req.body;
+  const projectId = req.params.id;
+  const _ = require('lodash');
+  const { role } = req.body
+
+  //   Xác thực cơ bản
+  if (!email) {
+    return res
+      .status(400)
+      .json({ succes: false, message: "Thiếu trường bắt buộc" });
+  }
+  const project = await Project.findById(projectId);
+  const user = await User.findById(req.userId);
+  const userRole = _.find(project.users, { 'user': user._id });
+  if (!(userRole && userRole.role === 'Leader')) {
+    return res
+      .status(400)
+      .json({ succes: false, message: "Người thực hiện phải là leader" });
+  }
+
+  try {
+    projectInvite = await ProjectInvite.findOne({ projectId: projectId})
+    
+    if (projectInvite) {
+      const checkEmail = _.find(projectInvite.users, { 'email': email });
+      if (checkEmail) {
+        return res
+          .status(400)
+          .json({ succes: false, message: "Đã mời thành viên này" });
+      } 
+      projectInvite.users.push({ email: email, role: role } );
+    } else {
+      // Tạo 1 bản ghi trong bảng projectinvites
+      const projectInvite = new ProjectInvite({
+        projectId: projectId,
+        users: [{ email: email, role: role }],
+      });
+    }
+    
+
+    // Thêm project vào tập các project của người dùng
+    project.invite.push( { email: email, role: role } );
+
+    await projectInvite.save();
+    await project.save();
+
+    res.status(200).json({ success: true, message: "Mời tham gia thành công" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 module.exports = router;
