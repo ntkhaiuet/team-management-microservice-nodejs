@@ -513,7 +513,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
  *                default: Member
  *    responses:
  *      200:
- *        description: Cập nhật thông tin project thành công
+ *        description: Đã gửi lời mời cho thành viên vào dự án
  *        content:
  *          application/json:
  *            schema:
@@ -522,9 +522,9 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: true
  *                message:
- *                  default: Mời thành viên tham gia project thành công
+ *                  default: Đã gửi lời mời cho thành viên vào dự án
  *      400:
- *        description: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
+ *        description: Vui lòng nhập địa chỉ email và role/Chỉ leader mới có thể mời thành viên vào dự án/Địa chỉ email này đã được mời vào dự án
  *        content:
  *          application/json:
  *            schema:
@@ -533,9 +533,9 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
+ *                  default: Vui lòng nhập địa chỉ email và role/Chỉ leader mới có thể mời thành viên vào dự án/Địa chỉ email này đã được mời vào dự án
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -544,62 +544,66 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route PUT api/project/:id/invite
-// @desc Mời các thành viên tham gia project
+// @desc Mời thành viên tham gia vào project
 // @access Private
 router.put("/:id/invite", verifyToken, async (req, res) => {
-  const { email } = req.body;
+  const { email, role } = req.body;
   const projectId = req.params.id;
-  const _ = require('lodash');
-  const { role } = req.body
-
-  //   Xác thực cơ bản
-  if (!email) {
-    return res
-      .status(400)
-      .json({ succes: false, message: "Thiếu trường bắt buộc" });
-  }
-  const project = await Project.findById(projectId);
-  const user = await User.findById(req.userId);
-  const userRole = _.find(project.users, { 'user': user._id });
-  if (!(userRole && userRole.role === 'Leader')) {
-    return res
-      .status(400)
-      .json({ succes: false, message: "Người thực hiện phải là leader" });
-  }
+  const _ = require("lodash");
 
   try {
-    projectInvite = await ProjectInvite.findOne({ projectId: projectId})
-    
-    if (projectInvite) {
-      const checkEmail = _.find(projectInvite.users, { 'email': email });
-      if (checkEmail) {
-        return res
-          .status(400)
-          .json({ succes: false, message: "Đã mời thành viên này" });
-      } 
-      projectInvite.users.push({ email: email, role: role } );
-    } else {
+    // Xác thực cơ bản
+    if (!email || !role) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng nhập địa chỉ email và role",
+      });
+    }
+
+    const project = await Project.findById(projectId);
+    const user = await User.findById(req.userId);
+    const userRole = _.find(project.users, { user: user._id });
+    if (!(userRole && userRole.role === "Leader")) {
+      return res.status(400).json({
+        success: false,
+        message: "Chỉ leader mới có thể mời thành viên vào dự án",
+      });
+    }
+
+    let projectInvite = await ProjectInvite.findOne({ projectId: projectId });
+    if (!projectInvite) {
       // Tạo 1 bản ghi trong bảng projectinvites
-      const projectInvite = new ProjectInvite({
+      projectInvite = new ProjectInvite({
         projectId: projectId,
         users: [{ email: email, role: role }],
       });
+    } else {
+      const checkEmail = _.find(projectInvite.users, { email: email });
+      if (checkEmail) {
+        return res.status(400).json({
+          success: false,
+          message: "Địa chỉ email này đã được mời vào dự án",
+        });
+      }
+      projectInvite.users.push({ email: email, role: role });
     }
-    
 
     // Thêm project vào tập các project của người dùng
-    project.invite.push( { email: email, role: role } );
+    project.invite.push({ email: email, role: role });
 
     await projectInvite.save();
     await project.save();
 
-    res.status(200).json({ success: true, message: "Mời tham gia thành công" });
+    res.status(200).json({
+      success: true,
+      message: "Đã gửi lời mời cho thành viên vào dự án",
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 

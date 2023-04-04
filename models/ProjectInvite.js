@@ -8,7 +8,7 @@ const ProjectInviteSchema = new Schema(
     projectId: { type: Schema.Types.ObjectId, require: true },
     users: [
       {
-        email: { type: String, unique: true },
+        email: { type: String },
         role: {
           type: String,
           enum: ["Leader", "Reviewer", "Member"],
