@@ -565,9 +565,8 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
 
     const project = await Project.findById(projectId);
     // check thành viên đã có trong dự án hay chưa
-    const userInvite = await User.find({'email': email})
-    const userCheck = userInvite[0]
-    if (userCheck && _.find(project.users, { user: userCheck._id }) ) {
+    const userInvite = await User.findOne({ email: email });
+    if (userInvite && _.find(project.users, { user: userInvite._id })) {
       return res.status(400).json({
         success: false,
         message: "Thành viên này đã có trong dự án",

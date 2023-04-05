@@ -408,36 +408,15 @@ router.put("/", verifyToken, async (req, res) => {
  *                  items:
  *                    type: object
  *                    properties:
- *                      _id:
- *                        type: string
- *                        description: ID của lời mời
- *                        example: 642d9b20bd3514138fb26c09
  *                      projectId:
  *                        type: string
  *                        description: ID của dự án được mời
  *                        example: 6422f6b7696dbe537c03d71a
- *                      users:
- *                        type: array
- *                        items:
- *                          type: object
- *                          properties:
- *                            email:
- *                              type: string
- *                              description: Địa chỉ email của người dùng được mời
- *                              example: example@gmail.com
- *                            role:
- *                              type: string
- *                              description: Vai trò của người dùng trong dự án
- *                              example: Member
- *                            _id:
- *                              type: string
- *                              description: ID của người dùng được mời
- *                              example: 642d9b20bd3514138fb26c0a
- *                        description: Thông tin về người dùng được mời
- *                      createdAt:
+ *                      role:
  *                        type: string
- *                        description: Thời gian tạo lời mời
- *                        example: 22:55:33 05/04/2023
+ *                        description: Vai trò của người dùng trong dự án
+ *                        example: Member
+
  *      400:
  *        description: Không tìm thấy người dùng
  *        content:
@@ -477,11 +456,27 @@ router.get("/invitations/list", verifyToken, async (req, res) => {
         .status(400)
         .json({ success: false, message: "Không tìm thấy người dùng" });
     }
-    userProjectInvite = await ProjectInvite.find({"users.email": user.email});
+
+    // Tìm các project mà user được mời vào
+    let userProjectInvite = await ProjectInvite.find({
+      "users.email": user.email,
+    });
+
+    // Lấy ra projectId và role của mỗi project người dùng được mời cho vàng mảng data
+    let data = userProjectInvite.map((projectinvite) => {
+      let roleUser;
+      projectinvite.users.forEach((element) => {
+        if (element.email === user.email) {
+          roleUser = element.role;
+        }
+      });
+      return { projectId: projectinvite.projectId, role: roleUser };
+    });
+
     res.json({
       success: true,
       message: "Lấy thông tin thành công",
-      data: userProjectInvite
+      data: data,
     });
   } catch (error) {
     console.log(error);
