@@ -54,7 +54,7 @@ const options = {
     },
     servers: [
       {
-        url: `https://${process.env.SERVER}`,
+        url: `http://${process.env.SERVER}`,
       },
     ],
   },

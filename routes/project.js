@@ -564,6 +564,16 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
     }
 
     const project = await Project.findById(projectId);
+    // check thành viên đã có trong dự án hay chưa
+    const userInvite = await User.find({'email': email})
+    const userCheck = userInvite[0]
+    if (userCheck && _.find(project.users, { user: userCheck._id }) ) {
+      return res.status(400).json({
+        success: false,
+        message: "Thành viên này đã có trong dự án",
+      });
+    }
+    // check role của người mời
     const user = await User.findById(req.userId);
     const userRole = _.find(project.users, { user: user._id });
     if (!(userRole && userRole.role === "Leader")) {
