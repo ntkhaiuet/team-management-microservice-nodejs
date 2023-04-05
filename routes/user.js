@@ -6,6 +6,7 @@ require("dotenv").config();
 
 const User = require("../models/User");
 const ProjectInvite = require("../models/ProjectInvite");
+const Project = require("../models/Project");
 
 /**
  * @swagger
@@ -481,6 +482,129 @@ router.get("/invitations/list", verifyToken, async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/user/{projectId}/invite/respond:
+ *  put:
+ *    summary: Phản hồi lời mời thành viên tham gia vào project
+ *    tags: [Users]
+ *    security:
+ *      - bearerAuth: []
+ *    description: User Phản hồi lời mời thành viên tham gia vào project
+ *    parameters:
+ *      - in: path
+ *        name: projectId
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: ID của project
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              accept:
+ *                type: Boolean
+ *                default: true
+ *    responses:
+ *      200:
+ *        description: Xác nhận phản hồi thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Xác nhận phản hồi thành công
+ *      400:
+ *        description: Không tìm thấy lời mời
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Không tìm thấy lời mời
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Lỗi hệ thống
+ */
+// @route PUT api/project/:id/invite
+// @desc Mời thành viên tham gia vào project
+// @access Private
+router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
+  const {accept} = req.body;
+  const projectId = req.params.projectId
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res
+          .status(400)
+          .json({success: false, message: "Không tìm thấy người dùng"});
+    }
+
+    const project = await Project.findById(projectId)
+    if (!project) {
+      return res
+          .status(400)
+          .json({success: false, message: "Không tìm thấy dự án"});
+    }
+
+    const projectInvite = await ProjectInvite.findOne({'projectId': projectId})
+    if (!projectInvite) {
+      return res
+          .status(400)
+          .json({success: false, message: "Không tìm thấy lời mời"});
+    }
+    if (accept) {
+      let userInvite = projectInvite.users.find(u => u.email === user.email);
+      // thêm 1 project trong user
+      user.projects.push({project: projectId, role: userInvite.role})
+      // xóa user ở trường invite và thêm vào trường user
+      await Project.updateOne(
+          {_id: projectId},
+          {
+            $pull: {invite: {email: user.email}},
+            $push: {
+              users: {user: user._id, role: userInvite.role}
+            }
+          }
+      )
+    }
+    // xóa user trong projectInvite
+    await ProjectInvite.updateOne(
+        {projectId: projectId},
+        {$pull: {users: {email: user.email}}}
+    )
+
+    await projectInvite.save();
+    await project.save();
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Xác nhận phản hồi lời mời thành công",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success: false, message: "Lỗi hệ thống"});
   }
 });
 
