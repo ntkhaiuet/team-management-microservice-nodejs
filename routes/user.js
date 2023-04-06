@@ -546,53 +546,57 @@ router.get("/invitations/list", verifyToken, async (req, res) => {
  *                message:
  *                  default: Lỗi hệ thống
  */
-// @route PUT api/project/:id/invite
-// @desc Mời thành viên tham gia vào project
+// @route PUT api/user/:projectId/invite/respond
+// @desc Phản hồi lời mời thành viên tham gia vào project
 // @access Private
 router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
-  const {accept} = req.body;
-  const projectId = req.params.projectId
+  const { accept } = req.body;
+  const projectId = req.params.projectId;
+
   try {
     const user = await User.findById(req.userId);
     if (!user) {
       return res
-          .status(400)
-          .json({success: false, message: "Không tìm thấy người dùng"});
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
     }
 
-    const project = await Project.findById(projectId)
+    const project = await Project.findById(projectId);
     if (!project) {
       return res
-          .status(400)
-          .json({success: false, message: "Không tìm thấy dự án"});
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy dự án" });
     }
 
-    const projectInvite = await ProjectInvite.findOne({'projectId': projectId})
+    const projectInvite = await ProjectInvite.findOne({
+      projectId: projectId,
+      "users.email": user.email,
+    });
     if (!projectInvite) {
       return res
-          .status(400)
-          .json({success: false, message: "Không tìm thấy lời mời"});
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy lời mời" });
     }
     if (accept) {
-      let userInvite = projectInvite.users.find(u => u.email === user.email);
+      let userInvite = projectInvite.users.find((u) => u.email === user.email);
       // thêm 1 project trong user
-      user.projects.push({project: projectId, role: userInvite.role})
+      user.projects.push({ project: projectId, role: userInvite.role });
       // xóa user ở trường invite và thêm vào trường user
       await Project.updateOne(
-          {_id: projectId},
-          {
-            $pull: {invite: {email: user.email}},
-            $push: {
-              users: {user: user._id, role: userInvite.role}
-            }
-          }
-      )
+        { _id: projectId },
+        {
+          $pull: { invite: { email: user.email } },
+          $push: {
+            users: { user: user._id, role: userInvite.role },
+          },
+        }
+      );
     }
     // xóa user trong projectInvite
     await ProjectInvite.updateOne(
-        {projectId: projectId},
-        {$pull: {users: {email: user.email}}}
-    )
+      { projectId: projectId },
+      { $pull: { users: { email: user.email } } }
+    );
 
     await projectInvite.save();
     await project.save();
@@ -604,7 +608,7 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({success: false, message: "Lỗi hệ thống"});
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
