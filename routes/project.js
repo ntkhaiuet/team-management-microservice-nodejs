@@ -194,9 +194,11 @@ router.post("/create", verifyToken, async (req, res) => {
     }
 
     // Kiểm tra project tên project mới và project đã có của người dùng
-    const isProjectExist = user.projects.some(
-      (project) => project.project.name === name
-    );
+    const isProjectExist =
+      user.projects &&
+      user.projects.some(
+        (project) => project.project && project.project.name === name
+      );
 
     if (isProjectExist) {
       return res
@@ -784,6 +786,9 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
     );
     user.projects.splice(index, 1);
     await user.save();
+
+    // Xóa project trong collection projectinvites
+    await ProjectInvite.findOneAndDelete({ projectId: projectId });
 
     res.status(200).json({
       success: true,

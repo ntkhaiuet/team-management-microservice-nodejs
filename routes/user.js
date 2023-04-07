@@ -554,6 +554,7 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
   const projectId = req.params.projectId;
 
   try {
+    // Lấy thông tin người dùng
     const user = await User.findById(req.userId);
     if (!user) {
       return res
@@ -561,6 +562,7 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
         .json({ success: false, message: "Không tìm thấy người dùng" });
     }
 
+    // Lấy thông tin project
     const project = await Project.findById(projectId);
     if (!project) {
       return res
@@ -568,6 +570,7 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
         .json({ success: false, message: "Không tìm thấy dự án" });
     }
 
+    // Kiểm tra lời mời tồn tại
     const projectInvite = await ProjectInvite.findOne({
       projectId: projectId,
       "users.email": user.email,
@@ -577,10 +580,49 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
         .status(400)
         .json({ success: false, message: "Không tìm thấy lời mời" });
     }
+
     if (accept) {
       let userInvite = projectInvite.users.find((u) => u.email === user.email);
+
+      // Thay role Leader cũ thành Member
+      if (userInvite.role === "Leader") {
+        // Lấy id của Leader cũ
+        const oldLeader = await User.findOne({
+          "projects.project": projectId,
+        });
+
+        const oldLeaderId = oldLeader._id;
+
+        // Thay role trong project
+        const updatedProject = await Project.findOneAndUpdate(
+          { _id: projectId, "users.user": oldLeaderId },
+          { $set: { "users.$.role": "Member" } },
+          { new: true }
+        );
+
+        if (!updatedProject) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Không tìm thấy project" });
+        }
+
+        // Thay role trong user
+        const updatedUser = await User.findOneAndUpdate(
+          { _id: oldLeaderId, "projects.project": projectId },
+          { $set: { "projects.$.role": "Member" } },
+          { new: true }
+        );
+
+        if (!updatedUser) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Không tìm thấy user" });
+        }
+      }
+
       // thêm 1 project trong user
       user.projects.push({ project: projectId, role: userInvite.role });
+
       // xóa user ở trường invite và thêm vào trường user
       await Project.updateOne(
         { _id: projectId },
@@ -598,13 +640,78 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
       { $pull: { users: { email: user.email } } }
     );
 
-    await projectInvite.save();
-    await project.save();
-    await user.save();
+    await Promise.all([projectInvite.save(), project.save(), user.save()]);
 
     res.status(200).json({
       success: true,
       message: "Xác nhận phản hồi lời mời thành công",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/user/outproject/{projectId}:
+ *  put:
+ *    summary: Rời khỏi 1 project
+ *    tags: [Users]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Rời khỏi 1 project (Chỉ Member hoặc Reviewer mới có thể rời project)
+ *    parameters:
+ *      - in: path
+ *        name: projectId
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: ID của project
+ *    responses:
+ *      200:
+ *        description: Rời khỏi project thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Rời khỏi project thành công
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Lỗi hệ thống
+ */
+// @route PUT api/user/outproject/:projectId
+// @desc Rời khỏi 1 project
+// @access Private
+router.put("/outproject/:projectId", verifyToken, async (req, res) => {
+  const projectId = req.params.projectId;
+
+  try {
+    await User.updateOne(
+      { _id: req.userId, "projects.role": { $in: ["Member", "Reviewer"] } },
+      { $pull: { projects: { project: projectId } } }
+    );
+
+    await Project.updateOne(
+      { _id: projectId, "users.role": { $in: ["Member", "Reviewer"] } },
+      { $pull: { users: { user: req.userId } } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Rời khỏi project thành công",
     });
   } catch (error) {
     console.log(error);
