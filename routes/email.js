@@ -115,7 +115,7 @@ function sendResetPasswordEmail(email) {
  *              type: string
  *              example: Xác minh email thất bại! Token không hợp lệ, vui lòng thử lại.
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -124,7 +124,7 @@ function sendResetPasswordEmail(email) {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route GET api/email/verify/:token
 // @desc Xác minh email. Người dùng truy cập vào đường dẫn để xác minh tài khoản.
@@ -148,7 +148,7 @@ router.get("/verify/:token", async (req, res) => {
     return res.sendFile(path.dirname(__dirname) + "/views/verifyEmail.html");
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -193,7 +193,7 @@ router.get("/verify/:token", async (req, res) => {
  *                message:
  *                  default: Email không tồn tại
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -202,7 +202,7 @@ router.get("/verify/:token", async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route POST api/email/send
 // @desc Gửi email xác minh chứa đường dẫn để người dùng có thể xác minh tài khoản khi nhấn vào
@@ -230,9 +230,7 @@ router.post("/send", async (req, res) => {
     await user.save();
   } catch (error) {
     console.log(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 
   //   Gửi email xác minh tới user
@@ -241,7 +239,7 @@ router.post("/send", async (req, res) => {
     res.json({ success: true, message: result, token: token });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -284,7 +282,7 @@ router.post("/send", async (req, res) => {
  *                message:
  *                  default: Email không tồn tại
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -293,7 +291,7 @@ router.post("/send", async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route GET api/email/resetpassword
 // @desc Gửi email đặt lại mật khẩu. Gửi 1 mật khẩu mới được tạo ngẫu nhiên qua email của người dùng
@@ -318,9 +316,7 @@ router.post("/reset_password", async function (req, res) {
     }
   } catch (error) {
     console.log(error);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal server error" });
+    return res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 
   // Gửi email đặt lại mật khẩu
@@ -335,7 +331,7 @@ router.post("/reset_password", async function (req, res) {
     res.json({ success: success, message: result });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 

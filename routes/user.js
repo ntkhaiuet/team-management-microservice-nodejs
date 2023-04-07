@@ -114,7 +114,7 @@ const Project = require("../models/Project");
  *                message:
  *                  default: Thiếu trường bắt buộc/Email không tồn tại/Mật khẩu không đúng
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -123,7 +123,7 @@ const Project = require("../models/Project");
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route POST api/user/change_password
 // @desc Thay đổi mật khẩu tài khoản người dùng
@@ -164,7 +164,7 @@ router.post("/change_password", verifyToken, async function (req, res) {
     res.json({ success: true, message: "Thay đổi mật khẩu thành công" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -195,7 +195,7 @@ router.post("/change_password", verifyToken, async function (req, res) {
  *                message:
  *                  default: Không tìm thấy người dùng
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -204,7 +204,7 @@ router.post("/change_password", verifyToken, async function (req, res) {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route GET api/user
 // @desc Nhận thông tin người dùng hiện tại
@@ -220,7 +220,7 @@ router.get("/", verifyToken, async (req, res) => {
     res.json(user);
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -307,7 +307,7 @@ router.get("/", verifyToken, async (req, res) => {
  *                message:
  *                  default: Thiếu trường bắt buộc/Không tìm thấy người dùng/Email đã tồn tại
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -316,7 +316,7 @@ router.get("/", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route PUT api/user
 // @desc Cập nhật thông tin người dùng
@@ -378,7 +378,7 @@ router.put("/", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -432,7 +432,7 @@ router.put("/", verifyToken, async (req, res) => {
  *                  type: string
  *                  default: Không tìm thấy người dùng
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -443,7 +443,7 @@ router.put("/", verifyToken, async (req, res) => {
  *                  default: false
  *                message:
  *                  type: string
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 
 // @route GET api/user/invitations/list
@@ -481,7 +481,7 @@ router.get("/invitations/list", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 

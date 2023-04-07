@@ -88,7 +88,7 @@ const Project = require("../models/Project");
  *                message:
  *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền lập kế hoạch cho project
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -97,7 +97,7 @@ const Project = require("../models/Project");
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route POST api/planning/create/:id
 // @desc Lập kế hoạch cho project
@@ -161,7 +161,7 @@ router.post("/create/:id", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -225,7 +225,7 @@ router.post("/create/:id", verifyToken, async (req, res) => {
  *                message:
  *                  default: ProjectId không đúng hoặc người dùng không có quyền nhận thông tin về kế hoạch của project
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -234,7 +234,7 @@ router.post("/create/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route GET api/planning/read/:id
 // @desc Nhận thông tin về kế hoạch của project
@@ -274,7 +274,7 @@ router.get("/read/:id", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -357,7 +357,7 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *                message:
  *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền cập nhật kế hoạch cho project
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -366,7 +366,7 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route PUT api/planning/update/:id
 // @desc Cập nhật kế hoạch cho project
@@ -427,7 +427,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -483,7 +483,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
  *                message:
  *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền xóa 1 timeline trong kế hoạch của project
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -492,7 +492,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route DELETE api/planning/delete/:id
 // @desc Xóa 1 timeline có stage được truyền vào trong kế hoạch của project
@@ -542,7 +542,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 

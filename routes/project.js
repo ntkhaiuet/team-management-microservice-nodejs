@@ -157,7 +157,7 @@ const ProjectInvite = require("../models/ProjectInvite");
  *                message:
  *                  default: Thiếu trường bắt buộc/Không tìm thấy người dùng/Project đã tồn tại
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -166,7 +166,7 @@ const ProjectInvite = require("../models/ProjectInvite");
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route POST api/project/create
 // @desc Test 1 project mới
@@ -180,7 +180,7 @@ router.post("/create", verifyToken, async (req, res) => {
   if (!name) {
     return res
       .status(400)
-      .json({ succes: false, message: "Vui lòng nhập địa chỉ name" });
+      .json({ succes: false, message: "Vui lòng nhập name" });
   }
 
   try {
@@ -235,7 +235,7 @@ router.post("/create", verifyToken, async (req, res) => {
     res.status(200).json({ success: true, message: "Tạo project thành công" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -304,7 +304,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                message:
  *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -313,7 +313,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route PUT api/project/edit/:id
 // @desc Cập nhật thông tin project (Hiện tại chỉ mới thay đổi được tên project)
@@ -359,7 +359,7 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -433,7 +433,7 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *                message:
  *                  default: Không tìm thấy người dùng
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -442,7 +442,7 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route GET api/project/list
 // @desc Lấy list project của người dùng
@@ -467,7 +467,7 @@ router.get("/list", verifyToken, async function (req, res) {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -556,7 +556,7 @@ router.get("/list", verifyToken, async function (req, res) {
  *                message:
  *                  default: Project không tồn tại/Người dùng không là thành viên của project
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -565,7 +565,7 @@ router.get("/list", verifyToken, async function (req, res) {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route GET api/project/:projectId
 // @desc Lấy thông tin của 1 project của người dùng hiện tại
@@ -594,7 +594,7 @@ router.get("/:projectId", verifyToken, async function (req, res) {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -638,7 +638,7 @@ router.get("/:projectId", verifyToken, async function (req, res) {
  *                message:
  *                  default: ProjectId không đúng hoặc người dùng không có quyền xóa project
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -647,7 +647,7 @@ router.get("/:projectId", verifyToken, async function (req, res) {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route DELETE api/project/delete/:id
 // @desc Xóa 1 project
@@ -686,7 +686,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 

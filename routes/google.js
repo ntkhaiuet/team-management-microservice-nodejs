@@ -98,9 +98,7 @@ router.get(
       res.send("<script>window.close();</script >");
     } catch (error) {
       console.log(error);
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error" });
+      res.status(500).json({ success: false, message: "Lỗi hệ thống" });
     }
   }
 );
@@ -127,7 +125,7 @@ router.get(
  *                  default: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NDA2ZWIyYjBlNGYwMmRhMzZlNGRhMDciLCJ1c2VyRnVsbG5hbWUiOiJLaOG6o2kgbsOoIiwidXNlckVtYWlsIjoibmd1eWVudGhla2hhaTMxMTAyMDAxQGdtYWlsLmNvbSIsImlhdCI6MTY3ODE4Njc4OX0.8kz3LiOzn-MkN8ryIUWfFzkCzftoCav8FymHmOj-LJ8
  *
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -136,16 +134,14 @@ router.get(
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route GET api/google/token
 // @desc Trả về accessToken khi đăng nhập bằng Google thành công. Chỉ nhận được accessToken 1 lần duy nhất, từ lần thứ 2 truy cập API sẽ báo lỗi 500
 // @access Public
 router.get("/token", function (req, res) {
   if (!accessToken) {
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
   // Lưu accessToken vào biến tạm và xóa accessToken
   var tempAccessToken = accessToken;

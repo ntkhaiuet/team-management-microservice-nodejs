@@ -56,7 +56,7 @@ const User = require("../models/User");
  *                message:
  *                  default: Thiếu trường bắt buộc hoặc email đã tồn tại
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -65,7 +65,7 @@ const User = require("../models/User");
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route POST api/auth/register
 // @desc Đăng ký tài khoản
@@ -100,7 +100,7 @@ router.post("/register", async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
@@ -147,7 +147,7 @@ router.post("/register", async (req, res) => {
  *                message:
  *                  default: Thiếu trường bắt buộc/Email, password không chính xác/Tài khoản chưa được xác thực
  *      500:
- *        description: Internal server error
+ *        description: Lỗi hệ thống
  *        content:
  *          application/json:
  *            schema:
@@ -156,7 +156,7 @@ router.post("/register", async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Internal server error
+ *                  default: Lỗi hệ thống
  */
 // @route POST api/auth/login
 // @desc Đăng nhập. Yêu cầu tài khoản phải được xác thực sau đó trả về accessToken
@@ -212,7 +212,7 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
   }
 });
 
