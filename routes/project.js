@@ -243,11 +243,11 @@ router.post("/create", verifyToken, async (req, res) => {
  * @swagger
  * /api/project/edit/{id}:
  *  put:
- *    summary: Cập nhật thông tin project (Hiện tại chỉ mới thay đổi được tên project)
+ *    summary: Cập nhật thông tin project (truyền ít nhất 1 trong 3 trường name, description, status)
  *    tags: [Projects]
  *    security:
  *      - bearerAuth: []
- *    description: Cập nhật thông tin project (Hiện tại chỉ mới thay đổi được tên project), chỉ Leader mới có quyền cập nhật thông tin project
+ *    description: Cập nhật thông tin project (truyền ít nhất 1 trong 3 trường name, description, status) (dành cho Leader)
  *    parameters:
  *      - in: path
  *        name: id
@@ -265,6 +265,12 @@ router.post("/create", verifyToken, async (req, res) => {
  *              name:
  *                type: String
  *                default: MyProject
+ *              description:
+ *                type: String
+ *                default: Description
+ *              status:
+ *                type: String
+ *                default: Completed
  *    responses:
  *      200:
  *        description: Cập nhật thông tin project thành công
@@ -280,20 +286,51 @@ router.post("/create", verifyToken, async (req, res) => {
  *                project:
  *                  default:
  *                    {
- *                        "_id": "6422436f9574d6d0650f0059",
- *                        "name": "Project cua Khai",
- *                        "status": "Processing",
- *                        "users": [
- *                            {
- *                                "user": "64106a4a65047e0dff8ecc81",
- *                                "role": "Leader",
- *                                "_id": "6422436f9574d6d0650f005a"
- *                            }
- *                        ],
- *                        "createdAt": "2023-03-28T01:30:17.781Z"
+ *                      "plan": {
+ *                        "topic": "Team-Management",
+ *                        "target": "Build a website to support team work management",
+ *                        "timeline": [
+ *                          {
+ *                            "stage": "Start",
+ *                            "note": "Start project",
+ *                            "deadline": "01/01/2023",
+ *                            "_id": "64256555160f141a0235d7ba"
+ *                          },
+ *                          {
+ *                            "stage": "Report Week 1",
+ *                            "note": "Online",
+ *                            "deadline": "08/01/2023",
+ *                            "_id": "642555a106832b6c7442918f"
+ *                          }
+ *                        ]
+ *                      },
+ *                      "_id": "6424429abb58c59bbec2be57",
+ *                      "name": "Project cua Khai edit",
+ *                      "status": "Processing",
+ *                      "users": [
+ *                        {
+ *                          "user": "64106a4a65047e0dff8ecc81",
+ *                          "role": "Leader",
+ *                          "_id": "6424429abb58c59bbec2be58"
+ *                        }
+ *                      ],
+ *                      "createdAt": "20:51:16 29/03/2023",
+ *                      "invite": [
+ *                        {
+ *                          "email": "example@gmail.com",
+ *                          "role": "Member",
+ *                          "_id": "642bfd9c2a7e6432547910ce"
+ *                        },
+ *                        {
+ *                          "email": "example11@gmail.com",
+ *                          "role": "Member",
+ *                          "_id": "642dade1213644752b9d89d9"
+ *                        }
+ *                      ],
+ *                      "description": "Description"
  *                    }
  *      400:
- *        description: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
+ *        description: Vui lòng nhập name, description và status/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
  *        content:
  *          application/json:
  *            schema:
@@ -302,7 +339,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
+ *                  default: Vui lòng nhập name, description và status/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -316,28 +353,49 @@ router.post("/create", verifyToken, async (req, res) => {
  *                  default: Lỗi hệ thống
  */
 // @route PUT api/project/edit/:id
-// @desc Cập nhật thông tin project (Hiện tại chỉ mới thay đổi được tên project)
+// @desc Cập nhật thông tin project
 // @access Private
 router.put("/edit/:id", verifyToken, async (req, res) => {
-  const { name } = req.body;
+  const { name, description, status } = req.body;
   const projectId = req.params.id;
 
-  //   Xác thực cơ bản
-  if (!name) {
-    return res
-      .status(400)
-      .json({ succes: false, message: "Thiếu trường bắt buộc" });
+  // Kiểm tra dữ liệu đầu vào và lưu vào object
+  const updateProject = {
+    name: name ? name : undefined,
+    description: description ? description : undefined,
+    status: status ? status : undefined,
+  };
+
+  // Lọc các biến đầu vào không được truyền
+  const filterUpdateProject = Object.entries(updateProject).reduce(
+    (acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    },
+    {}
+  );
+
+  console.log(filterUpdateProject);
+
+  // Nếu tất cả các biến đầu vào đều không được truyền
+  if (Object.keys(filterUpdateProject).length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Vui lòng nhập name, description và status",
+    });
   }
 
   try {
-    // Cập nhật tên của project có _id là projectId, người dùng hiện tại là Leader của project đó
+    // Cập nhật tên, mô tả của project có _id là projectId, người dùng hiện tại là Leader của project đó
     const updateProject = await Project.findOneAndUpdate(
       {
         _id: projectId,
         "users.user": req.userId,
         "users.role": "Leader",
       },
-      { name: name },
+      filterUpdateProject,
       {
         new: true,
       }
@@ -388,38 +446,85 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *                    [
  *                      {
  *                        "project": {
- *                          "_id": "6422436f9574d6d0650f0059",
- *                          "name": "Project cua Khai Khai Khai",
+ *                          "plan": {
+ *                            "topic": "Team-Management",
+ *                            "target": "Build a website to support team work management",
+ *                            "timeline": [
+ *                              {
+ *                                "stage": "Start",
+ *                                "note": "Start project",
+ *                                "deadline": "01/01/2023",
+ *                                "_id": "64256555160f141a0235d7ba"
+ *                              },
+ *                              {
+ *                                "stage": "Report Week 1",
+ *                                "note": "Online",
+ *                                "deadline": "08/01/2023",
+ *                                "_id": "642555a106832b6c7442918f"
+ *                              }
+ *                            ]
+ *                         },
+ *                          "_id": "6424429abb58c59bbec2be57",
+ *                          "name": "Project cua Khai edit",
  *                          "status": "Processing",
  *                          "users": [
  *                            {
  *                              "user": "64106a4a65047e0dff8ecc81",
  *                              "role": "Leader",
- *                              "_id": "6422436f9574d6d0650f005a"
+ *                              "_id": "6424429abb58c59bbec2be58"
  *                            }
  *                          ],
- *                          "createdAt": "2023-03-28T01:30:17.781Z"
+ *                          "createdAt": "20:51:16 29/03/2023",
+ *                          "invite": [
+ *                            {
+ *                              "email": "example@gmail.com",
+ *                              "role": "Member",
+ *                              "_id": "642bfd9c2a7e6432547910ce"
+ *                            },
+ *                            {
+ *                              "email": "example11@gmail.com",
+ *                              "role": "Member",
+ *                              "_id": "642dade1213644752b9d89d9"
+ *                            }
+ *                          ],
+ *                          "description": "Description"
  *                        },
  *                        "role": "Leader",
- *                        "_id": "6422436f9574d6d0650f005b"
+ *                        "_id": "6424429abb58c59bbec2be59"
  *                      },
  *                      {
  *                        "project": {
- *                          "_id": "64224e85853784f14a290f37",
- *                          "name": "Project cua Khai ne",
+ *                          "plan": {
+ *                            "timeline": []
+ *                          },
+ *                          "_id": "642be042920f6fa78e9be1bb",
+ *                          "name": "Project cua Sheissocute",
  *                          "status": "Processing",
  *                          "users": [
  *                            {
- *                              "user": "64106a4a65047e0dff8ecc81",
+ *                              "user": "642bdfa7920f6fa78e9be1b2",
  *                              "role": "Leader",
- *                              "_id": "64224e85853784f14a290f38"
+ *                              "_id": "642be042920f6fa78e9be1bc"
+ *                            },
+ *                            {
+ *                              "user": "64106a4a65047e0dff8ecc81",
+ *                              "role": "Member",
+ *                              "_id": "642e66b5b30dd95f1995b1d2"
  *                            }
  *                          ],
- *                          "createdAt": "2023-03-28T02:17:51.697Z"
+ *                          "createdAt": "15:17:55 04/04/2023",
+ *                          "invite": [
+ *                            {
+ *                              "email": "example@gmail.com",
+ *                              "role": "Member",
+ *                              "_id": "642bfd9f2a7e6432547910d8"
+ *                            }
+ *                          ],
+ *                          "description": "Description"
  *                        },
- *                        "role": "Leader",
- *                        "_id": "64224e85853784f14a290f39"
- *                      }
+ *                        "role": "Member",
+ *                        "_id": "642e66b5b30dd95f1995b1d1"
+ *                      },
  *                    ]
  *      400:
  *        description: Không tìm thấy người dùng
