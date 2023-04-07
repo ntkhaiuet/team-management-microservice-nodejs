@@ -6,6 +6,7 @@ const formattedDate = require("../middleware/formatDate");
 const ProjectSchema = new Schema(
   {
     name: { type: String, required: true },
+    description: { type: String },
     status: {
       type: String,
       enum: ["Processing", "Completed"],

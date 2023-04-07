@@ -463,7 +463,7 @@ router.get("/invitations/list", verifyToken, async (req, res) => {
       "users.email": user.email,
     });
 
-    // Lấy ra projectId và role của mỗi project người dùng được mời cho vàng mảng data
+    // Lấy ra projectId và role của mỗi project người dùng được mời cho vào mảng data
     let data = userProjectInvite.map((projectinvite) => {
       let roleUser;
       projectinvite.users.forEach((element) => {

@@ -23,6 +23,25 @@ const ProjectInvite = require("../models/ProjectInvite");
  *          type: String
  *          enum: [Processing, Completed]
  *          default: Processing
+ *        plan:
+ *          type: object
+ *          properties:
+ *            topic:
+ *              type: String
+ *            target:
+ *              type: String
+ *            timeline:
+ *              type: Array
+ *              items:
+ *                type: object
+ *                properties:
+ *                  stage:
+ *                    type: String
+ *                    unique: true
+ *                  note:
+ *                    type: String
+ *                  deadline:
+ *                    type: String
  *        users:
  *          type: Array
  *          items:
@@ -34,13 +53,54 @@ const ProjectInvite = require("../models/ProjectInvite");
  *                type: string
  *                enum: ["Leader", "Reviewer", "Member"]
  *                default: "Member"
+ *        invite:
+ *          type: Array
+ *          items:
+ *            type: object
+ *            properties:
+ *              email:
+ *                type: string
+ *              role:
+ *                type: string
+ *                enum: ["Leader", "Reviewer", "Member"]
+ *                default: "Member"
  *        createdAt:
  *          type: String
  *      example:
  *        _id: 6422436f9574d6d0650f0059
  *        name: Project cua Khai
  *        status: Processing
+ *        plan: {
+ *          "topic": "Team-Management",
+ *          "target": "Build a website to support team work management",
+ *          "timeline": [
+ *            {
+ *              "stage": "Start",
+ *              "note": "Start project",
+ *              "deadline": "01/01/2023",
+ *              "_id": "64256555160f141a0235d7ba"
+ *            },
+ *            {
+ *              "stage": "Report Week 1",
+ *              "note": "Online",
+ *              "deadline": "08/01/2023",
+ *              "_id": "642555a106832b6c7442918f"
+ *            }
+ *          ]
+ *        }
  *        users: [{user: "64106a4a65047e0dff8ecc81", role: "Leader"}]
+ *        invite: [
+ *          {
+ *            "email": "example@gmail.com",
+ *            "role": "Member",
+ *            "_id": "642bfd9c2a7e6432547910ce"
+ *          },
+ *          {
+ *            "email": "example11@gmail.com",
+ *            "role": "Member",
+ *            "_id": "642dade1213644752b9d89d9"
+ *          }
+ *        ]
  *        createdAt: 10:56:27 29/03/2023
  */
 
@@ -55,11 +115,11 @@ const ProjectInvite = require("../models/ProjectInvite");
  * @swagger
  * /api/project/create:
  *  post:
- *    summary: Tạo project mới (Hiện tại chưa thêm các thành viên khác làm Member hay Reviewer, chỉ đặt người dùng tạo project là Leader)
+ *    summary: Tạo project mới (Người tạo project là Leader)
  *    tags: [Projects]
  *    security:
  *      - bearerAuth: []
- *    description: Tạo project mới với tên được truyền vào và thêm người dùng tạo project vào project đó với vai trò Leader
+ *    description: Tạo project mới (name là bắt buộc, description và listUserInvite có thể không cần truyền)
  *    requestBody:
  *      required: true
  *      content:
@@ -68,8 +128,11 @@ const ProjectInvite = require("../models/ProjectInvite");
  *            type: object
  *            properties:
  *              name:
- *                type: String
  *                default: MyProject
+ *              description:
+ *                default: Mô tả
+ *              listUserInvite:
+ *                default: [{email: "example1@gmail.com", role: "Member"}, {email: "example2@gmail.com", role: "Reviewer"}]
  *    responses:
  *      200:
  *        description: Tạo project thành công
@@ -109,19 +172,21 @@ const ProjectInvite = require("../models/ProjectInvite");
 // @desc Test 1 project mới
 // @access Private
 router.post("/create", verifyToken, async (req, res) => {
-  const name = req.body.name;
-  let roleUserCreate = "Leader";
+  const { name, description } = req.body;
+  let listUserInvite = req.body.listUserInvite || [];
+  let roleUserCreator = "Leader";
 
   //   Xác thực cơ bản
   if (!name) {
     return res
       .status(400)
-      .json({ succes: false, message: "Thiếu trường bắt buộc" });
+      .json({ succes: false, message: "Vui lòng nhập địa chỉ name" });
   }
 
   try {
     // Kiểm tra người dùng tồn tại và lấy các project của người dùng
     const user = await User.findById(req.userId).populate("projects.project");
+
     if (!user) {
       return res
         .status(400)
@@ -129,27 +194,43 @@ router.post("/create", verifyToken, async (req, res) => {
     }
 
     // Kiểm tra project tên project mới và project đã có của người dùng
-    const projectsLength = user.projects.length;
-    for (let i = 0; i < projectsLength; i++) {
-      if (user.projects[i].project.name === name) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Project đã tồn tại" });
-      }
+    const isProjectExist = user.projects.some(
+      (project) => project.project.name === name
+    );
+
+    if (isProjectExist) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Project đã tồn tại" });
     }
 
     // Tạo project mới
     const project = new Project({
-      name: name,
+      name,
+      description: description || "",
       status: "Processing",
-      users: [{ user: req.userId, role: roleUserCreate }],
+      users: [{ user: req.userId, role: roleUserCreator }],
     });
 
     // Thêm project vào tập các project của người dùng
-    user.projects.push({ project: project._id, role: roleUserCreate });
-
+    user.projects.push({ project: project._id, role: roleUserCreator });
     await user.save();
-    await project.save();
+
+    // Begin: Mời các user vào project
+    // Tạo 1 bản ghi trong bảng projectinvites
+    let projectInvite = new ProjectInvite({
+      projectId: project._id,
+      users: [],
+    });
+
+    // Thêm user vào tập các user được mời của project
+    listUserInvite.forEach(async (element) => {
+      projectInvite.users.push({ email: element.email, role: element.role });
+      project.invite.push({ email: element.email, role: element.role });
+    });
+
+    await Promise.all([projectInvite.save(), project.save()]);
+    // End: Mời các user vào project
 
     res.status(200).json({ success: true, message: "Tạo project thành công" });
   } catch (error) {
@@ -487,7 +568,7 @@ router.get("/list", verifyToken, async function (req, res) {
  *                  default: Internal server error
  */
 // @route GET api/project/:projectId
-// @desc Lấy thông tin của 1 projectv của người dùng hiện tại
+// @desc Lấy thông tin của 1 project của người dùng hiện tại
 // @access Private
 router.get("/:projectId", verifyToken, async function (req, res) {
   const projectId = req.params.projectId;
