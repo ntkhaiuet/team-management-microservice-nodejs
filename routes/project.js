@@ -606,6 +606,8 @@ router.get("/list", verifyToken, async function (req, res) {
  *                  default: true
  *                message:
  *                  default: Lấy thông tin project thành công
+ *                role:
+ *                  default: Member
  *                project:
  *                  default:
  *                    {
@@ -694,9 +696,15 @@ router.get("/:projectId", verifyToken, async function (req, res) {
       });
     }
 
+    // Tìm user trong mảng user chứa thông tin của người dùng hiện tại
+    const userInfo = project.users.find(
+      (element) => element.user == req.userId
+    );
+
     res.json({
       success: true,
       message: "Lấy thông tin project thành công",
+      role: userInfo.role,
       project: project,
     });
   } catch (error) {
