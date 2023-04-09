@@ -841,16 +841,14 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
 
     const project = await Project.findById(projectId);
     // check thành viên đã có trong dự án hay chưa
-    const userInvite = await User.findOne({ email: email });
-    if (userInvite && _.find(project.users, { user: userInvite._id })) {
+    if (_.find(project.users, { email: email })) {
       return res.status(400).json({
         success: false,
         message: "Thành viên này đã có trong dự án",
       });
     }
     // check role của người mời
-    const user = await User.findById(req.userId);
-    const userRole = _.find(project.users, { user: user._id });
+    const userRole = _.find(project.users, { email: req.userEmail });
     if (!(userRole && userRole.role === "Leader")) {
       return res.status(400).json({
         success: false,
@@ -859,28 +857,17 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
     }
 
     let projectInvite = await ProjectInvite.findOne({ projectId: projectId });
-    if (!projectInvite) {
-      // Tạo 1 bản ghi trong bảng projectinvites
-      projectInvite = new ProjectInvite({
-        projectId: projectId,
-        users: [{ email: email, role: role }],
-      });
-    } else {
-      const checkEmail = _.find(projectInvite.users, { email: email });
-      if (checkEmail) {
-        return res.status(400).json({
-          success: false,
-          message: "Địa chỉ email này đã được mời vào dự án",
-        });
-      }
-      projectInvite.users.push({ email: email, role: role });
-    }
 
-    // Thêm project vào tập các project của người dùng
-    project.invite.push({ email: email, role: role });
+    const checkEmail = _.find(projectInvite.users, { email: email });
+    if (checkEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Địa chỉ email này đã được mời vào dự án",
+      });
+    }
+    projectInvite.users.push({ email: email, role: role, status: "Waiting" });
 
     await projectInvite.save();
-    await project.save();
 
     res.status(200).json({
       success: true,
