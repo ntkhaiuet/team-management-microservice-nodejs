@@ -545,55 +545,35 @@ router.get("/list", verifyToken, async function (req, res) {
  *                  default: true
  *                message:
  *                  default: Lấy thông tin project thành công
- *                data:
- *                  default:
+ *                project_id:
+ *                  default: 6432d4134b4a0c0558df66da
+ *                project_name:
+ *                  default: MyProject6
+ *                project_description:
+ *                  default: Mô tả
+ *                project_status:
+ *                  default: Processing
+ *                project_createdAt:
+ *                  default: 22:03:58 09/04/2023
+ *                user:
+ *                  default: {
+ *                    "email": "ntkhaiuet@gmail.com",
+ *                    "role": "Leader",
+ *                    "status": "Joined"
+ *                  }
+ *                teammate:
+ *                  default: [
  *                    {
- *                      role: "Member",
- *                      project:
- *                        {
- *                          "plan": {
- *                            "topic": "Team-Management",
- *                            "target": "Build a website to support team work management",
- *                            "timeline": [
- *                              {
- *                                "stage": "Start",
- *                                "note": "Start project",
- *                                "deadline": "01/01/2023",
- *                                "_id": "64256555160f141a0235d7ba"
- *                              },
- *                              {
- *                                "stage": "Report Week 1",
- *                                "note": "Online",
- *                                "deadline": "08/01/2023",
- *                                "_id": "642555a106832b6c7442918f"
- *                              }
- *                            ]
- *                          },
- *                          "_id": "6424429abb58c59bbec2be57",
- *                          "name": "Project cua Khai",
- *                          "status": "Processing",
- *                          "users": [
- *                            {
- *                              "user": "64106a4a65047e0dff8ecc81",
- *                              "role": "Leader",
- *                              "_id": "6424429abb58c59bbec2be58"
- *                            }
- *                          ],
- *                          "createdAt": "20:51:16 29/03/2023",
- *                          "invite": [
- *                            {
- *                              "email": "example@gmail.com",
- *                              "role": "Member",
- *                              "_id": "642bfd9c2a7e6432547910ce"
- *                            },
- *                            {
- *                              "email": "example11@gmail.com",
- *                              "role": "Member",
- *                              "_id": "642dade1213644752b9d89d9"
- *                            }
- *                          ]
- *                        }
+ *                      "email": "example1@gmail.com",
+ *                      "role": "Member",
+ *                      "status": "Waiting"
+ *                    },
+ *                    {
+ *                      "email": "example2@gmail.com",
+ *                      "role": "Reviewer",
+ *                      "status": "Waiting"
  *                    }
+ *                  ]
  *      400:
  *        description: Project không tồn tại/Người dùng không là thành viên của project
  *        content:
