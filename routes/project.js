@@ -34,19 +34,6 @@ const ProjectInvite = require("../models/ProjectInvite");
  *              role:
  *                type: string
  *                enum: ["Leader", "Reviewer", "Member"]
- *        invite:
- *          type: Array
- *          items:
- *            type: object
- *            properties:
- *              email:
- *                type: string
- *              role:
- *                type: string
- *                enum: ["Leader", "Reviewer", "Member"]
- *              status:
- *                type: string
- *                enum: ["Joined", "Waiting"]
  *        createdAt:
  *          type: String
  *      example:
@@ -109,36 +96,10 @@ const ProjectInvite = require("../models/ProjectInvite");
  *              properties:
  *                success:
  *                  default: true
+ *                message:
+ *                  default: Tạo project thành công
  *                project_id:
  *                  default: 6432490b39efd8d33bd9d23b
- *                project_name:
- *                  default: Project 12
- *                project_description:
- *                  default: Mô tả
- *                project_status:
- *                  default: Processing
- *                user:
- *                  default: {
- *                    "email": "ntkhaiuet@gmail.com",
- *                    "role": "Leader"
- *                  }
- *                teammate:
- *                  default: [
- *                    {
- *                      "email": "example1@gmail.com",
- *                      "role": "Member",
- *                      "status": "Waiting",
- *                      "_id": "6432490b39efd8d33bd9d241"
- *                    },
- *                    {
- *                      "email": "example2@gmail.com",
- *                      "role": "Reviewer",
- *                      "status": "Waiting",
- *                      "_id": "6432490b39efd8d33bd9d243"
- *                    }
- *                  ]
- *                createdAt:
- *                  default: 12:09:50 09/04/2023
  *      400:
  *        description: Thiếu trường bắt buộc/Không tìm thấy người dùng/Project đã tồn tại
  *        content:
@@ -239,15 +200,6 @@ router.post("/create", verifyToken, async (req, res) => {
       success: true,
       message: "Tạo project thành công",
       project_id: project._id,
-      project_name: project.name,
-      project_description: project.description,
-      project_status: project.status,
-      user: {
-        email: req.userEmail,
-        role: "Leader",
-      },
-      teammate: projectInvite.users,
-      createdAt: project.createdAt,
     });
   } catch (error) {
     console.log(error);
@@ -675,9 +627,6 @@ router.get("/:projectId", verifyToken, async function (req, res) {
     const project = await Project.findOne({
       _id: projectId,
       "users.user": req.userId,
-    }).populate({
-      path: "users.user",
-      select: "full_name email",
     });
     // Kiểm tra project tồn tại
     if (!project) {
@@ -688,18 +637,45 @@ router.get("/:projectId", verifyToken, async function (req, res) {
       });
     }
 
-    // Tìm user trong mảng user chứa thông tin của người dùng hiện tại
-    const userInfo = project.users.find(
-      (element) => element.user._id == req.userId
+    const projectInvite = await ProjectInvite.findOne({ projectId: projectId });
+    // Kiểm tra projectInvite tồn tại
+    if (!projectInvite) {
+      return res.status(400).json({
+        success: false,
+        message: "Không tìm thấy projectInvite",
+      });
+    }
+
+    // Tạo mảng lưu thông tin các user
+    var listUser = project.users.map(function (user) {
+      return { email: user.email, role: user.role, status: "Joined" };
+    });
+
+    // Mảng lưu thông tin các user được mời
+    const listInvite = projectInvite.users;
+
+    // Gộp 2 mảng không trùng lặp
+    const list = listUser.concat(listInvite);
+    var listUnique = list.filter((item, index) => list.indexOf(item) === index);
+
+    // Tìm user trong mảng listUnique
+    const index = listUnique.findIndex(
+      (element) => element.email == req.userEmail
     );
+    const userInfo = listUnique[index];
+    // Xóa userInfo trong mảng
+    listUnique.splice(index, 1);
 
     res.json({
       success: true,
       message: "Lấy thông tin project thành công",
-      data: {
-        role: userInfo.role,
-        project: project,
-      },
+      project_id: project._id,
+      project_name: project.name,
+      project_description: project.description,
+      project_status: project.status,
+      project_createdAt: project.createdAt,
+      user: userInfo,
+      teammate: listUnique,
     });
   } catch (error) {
     console.log(error);

@@ -24,6 +24,7 @@ const ProjectSchema = new Schema(
     },
     users: [
       {
+        _id: { type: false },
         email: { type: String, unique: true },
         role: {
           type: String,
