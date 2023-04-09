@@ -567,10 +567,17 @@ router.get("/list", verifyToken, async function (req, res) {
     // Lưu các project vào hằng projects
     const projects = user.projects;
 
+    // Tìm user trong mảng user chứa thông tin của người dùng hiện tại
+    const projectsWithRole = projects.map((projectWithUser) => {
+      const { role, project } = projectWithUser;
+      const user = project.users.find((user) => user.user == req.userId);
+      return { role: user.role, project };
+    });
+
     res.json({
       success: true,
       message: "Lấy danh sách thành công",
-      data: projects,
+      data: projectsWithRole,
     });
   } catch (error) {
     console.log(error);
@@ -606,52 +613,54 @@ router.get("/list", verifyToken, async function (req, res) {
  *                  default: true
  *                message:
  *                  default: Lấy thông tin project thành công
- *                role:
- *                  default: Member
- *                project:
+ *                data:
  *                  default:
  *                    {
- *                      "plan": {
- *                        "topic": "Team-Management",
- *                        "target": "Build a website to support team work management",
- *                        "timeline": [
- *                          {
- *                            "stage": "Start",
- *                            "note": "Start project",
- *                            "deadline": "01/01/2023",
- *                            "_id": "64256555160f141a0235d7ba"
+ *                      role: "Member",
+ *                      project:
+ *                        {
+ *                          "plan": {
+ *                            "topic": "Team-Management",
+ *                            "target": "Build a website to support team work management",
+ *                            "timeline": [
+ *                              {
+ *                                "stage": "Start",
+ *                                "note": "Start project",
+ *                                "deadline": "01/01/2023",
+ *                                "_id": "64256555160f141a0235d7ba"
+ *                              },
+ *                              {
+ *                                "stage": "Report Week 1",
+ *                                "note": "Online",
+ *                                "deadline": "08/01/2023",
+ *                                "_id": "642555a106832b6c7442918f"
+ *                              }
+ *                            ]
  *                          },
- *                          {
- *                            "stage": "Report Week 1",
- *                            "note": "Online",
- *                            "deadline": "08/01/2023",
- *                            "_id": "642555a106832b6c7442918f"
- *                          }
- *                        ]
- *                      },
- *                      "_id": "6424429abb58c59bbec2be57",
- *                      "name": "Project cua Khai",
- *                      "status": "Processing",
- *                      "users": [
- *                        {
- *                          "user": "64106a4a65047e0dff8ecc81",
- *                          "role": "Leader",
- *                          "_id": "6424429abb58c59bbec2be58"
+ *                          "_id": "6424429abb58c59bbec2be57",
+ *                          "name": "Project cua Khai",
+ *                          "status": "Processing",
+ *                          "users": [
+ *                            {
+ *                              "user": "64106a4a65047e0dff8ecc81",
+ *                              "role": "Leader",
+ *                              "_id": "6424429abb58c59bbec2be58"
+ *                            }
+ *                          ],
+ *                          "createdAt": "20:51:16 29/03/2023",
+ *                          "invite": [
+ *                            {
+ *                              "email": "example@gmail.com",
+ *                              "role": "Member",
+ *                              "_id": "642bfd9c2a7e6432547910ce"
+ *                            },
+ *                            {
+ *                              "email": "example11@gmail.com",
+ *                              "role": "Member",
+ *                              "_id": "642dade1213644752b9d89d9"
+ *                            }
+ *                          ]
  *                        }
- *                      ],
- *                      "createdAt": "20:51:16 29/03/2023",
- *                      "invite": [
- *                        {
- *                          "email": "example@gmail.com",
- *                          "role": "Member",
- *                          "_id": "642bfd9c2a7e6432547910ce"
- *                        },
- *                        {
- *                          "email": "example11@gmail.com",
- *                          "role": "Member",
- *                          "_id": "642dade1213644752b9d89d9"
- *                        }
- *                      ]
  *                    }
  *      400:
  *        description: Project không tồn tại/Người dùng không là thành viên của project
@@ -704,8 +713,10 @@ router.get("/:projectId", verifyToken, async function (req, res) {
     res.json({
       success: true,
       message: "Lấy thông tin project thành công",
-      role: userInfo.role,
-      project: project,
+      data: {
+        role: userInfo.role,
+        project: project,
+      },
     });
   } catch (error) {
     console.log(error);
