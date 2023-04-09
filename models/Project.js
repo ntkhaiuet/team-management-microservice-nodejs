@@ -10,7 +10,6 @@ const ProjectSchema = new Schema(
     status: {
       type: String,
       enum: ["Processing", "Completed"],
-      default: "Processing",
     },
     plan: {
       topic: { type: String },
@@ -25,21 +24,10 @@ const ProjectSchema = new Schema(
     },
     users: [
       {
-        user: { type: Schema.Types.ObjectId, ref: "User" },
+        email: { type: String, unique: true },
         role: {
           type: String,
           enum: ["Leader", "Reviewer", "Member"],
-          default: "Member",
-        },
-      },
-    ],
-    invite: [
-      {
-        email: { type: String },
-        role: {
-          type: String,
-          enum: ["Leader", "Reviewer", "Member"],
-          default: "Member",
         },
       },
     ],

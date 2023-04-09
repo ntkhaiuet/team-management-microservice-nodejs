@@ -19,40 +19,21 @@ const ProjectInvite = require("../models/ProjectInvite");
  *          type: String
  *        name:
  *          type: String
+ *        description:
+ *          type: String
  *        status:
  *          type: String
  *          enum: [Processing, Completed]
- *          default: Processing
- *        plan:
- *          type: object
- *          properties:
- *            topic:
- *              type: String
- *            target:
- *              type: String
- *            timeline:
- *              type: Array
- *              items:
- *                type: object
- *                properties:
- *                  stage:
- *                    type: String
- *                    unique: true
- *                  note:
- *                    type: String
- *                  deadline:
- *                    type: String
  *        users:
  *          type: Array
  *          items:
  *            type: object
  *            properties:
- *              user:
+ *              email:
  *                type: string
  *              role:
  *                type: string
  *                enum: ["Leader", "Reviewer", "Member"]
- *                default: "Member"
  *        invite:
  *          type: Array
  *          items:
@@ -63,42 +44,27 @@ const ProjectInvite = require("../models/ProjectInvite");
  *              role:
  *                type: string
  *                enum: ["Leader", "Reviewer", "Member"]
- *                default: "Member"
+ *              status:
+ *                type: string
+ *                enum: ["Joined", "Waiting"]
  *        createdAt:
  *          type: String
  *      example:
  *        _id: 6422436f9574d6d0650f0059
  *        name: Project cua Khai
+ *        description: Mô tả
  *        status: Processing
- *        plan: {
- *          "topic": "Team-Management",
- *          "target": "Build a website to support team work management",
- *          "timeline": [
- *            {
- *              "stage": "Start",
- *              "note": "Start project",
- *              "deadline": "01/01/2023",
- *              "_id": "64256555160f141a0235d7ba"
- *            },
- *            {
- *              "stage": "Report Week 1",
- *              "note": "Online",
- *              "deadline": "08/01/2023",
- *              "_id": "642555a106832b6c7442918f"
- *            }
- *          ]
- *        }
- *        users: [{user: "64106a4a65047e0dff8ecc81", role: "Leader"}]
+ *        users: [{email: "ntkhaiuet@gmail.com", role: "Member"}]
  *        invite: [
  *          {
  *            "email": "example@gmail.com",
  *            "role": "Member",
- *            "_id": "642bfd9c2a7e6432547910ce"
+ *            "status": "Joined",
  *          },
  *          {
  *            "email": "example11@gmail.com",
  *            "role": "Member",
- *            "_id": "642dade1213644752b9d89d9"
+ *            "status": "Waiting",
  *          }
  *        ]
  *        createdAt: 10:56:27 29/03/2023
@@ -143,8 +109,36 @@ const ProjectInvite = require("../models/ProjectInvite");
  *              properties:
  *                success:
  *                  default: true
- *                message:
- *                  default: Tạo project thành công
+ *                project_id:
+ *                  default: 6432490b39efd8d33bd9d23b
+ *                project_name:
+ *                  default: Project 12
+ *                project_description:
+ *                  default: Mô tả
+ *                project_status:
+ *                  default: Processing
+ *                user:
+ *                  default: {
+ *                    "email": "ntkhaiuet@gmail.com",
+ *                    "role": "Leader"
+ *                  }
+ *                teammate:
+ *                  default: [
+ *                    {
+ *                      "email": "example1@gmail.com",
+ *                      "role": "Member",
+ *                      "status": "Waiting",
+ *                      "_id": "6432490b39efd8d33bd9d241"
+ *                    },
+ *                    {
+ *                      "email": "example2@gmail.com",
+ *                      "role": "Reviewer",
+ *                      "status": "Waiting",
+ *                      "_id": "6432490b39efd8d33bd9d243"
+ *                    }
+ *                  ]
+ *                createdAt:
+ *                  default: 12:09:50 09/04/2023
  *      400:
  *        description: Thiếu trường bắt buộc/Không tìm thấy người dùng/Project đã tồn tại
  *        content:
@@ -211,12 +205,16 @@ router.post("/create", verifyToken, async (req, res) => {
       name,
       description: description || "",
       status: "Processing",
-      users: [{ user: req.userId, role: roleUserCreator }],
+      users: [
+        {
+          email: req.userEmail,
+          role: roleUserCreator,
+        },
+      ],
     });
 
     // Thêm project vào tập các project của người dùng
     user.projects.push({ project: project._id, role: roleUserCreator });
-    await user.save();
 
     // Begin: Mời các user vào project
     // Tạo 1 bản ghi trong bảng projectinvites
@@ -227,14 +225,30 @@ router.post("/create", verifyToken, async (req, res) => {
 
     // Thêm user vào tập các user được mời của project
     listUserInvite.forEach(async (element) => {
-      projectInvite.users.push({ email: element.email, role: element.role });
-      project.invite.push({ email: element.email, role: element.role });
+      projectInvite.users.push({
+        email: element.email,
+        role: element.role,
+        status: "Waiting",
+      });
     });
 
-    await Promise.all([projectInvite.save(), project.save()]);
+    await Promise.all([user.save(), projectInvite.save(), project.save()]);
     // End: Mời các user vào project
 
-    res.status(200).json({ success: true, message: "Tạo project thành công" });
+    res.status(200).json({
+      success: true,
+      message: "Tạo project thành công",
+      project_id: project._id,
+      project_name: project.name,
+      project_description: project.description,
+      project_status: project.status,
+      user: {
+        email: req.userEmail,
+        role: "Leader",
+      },
+      teammate: projectInvite.users,
+      createdAt: project.createdAt,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Lỗi hệ thống" });
@@ -447,87 +461,53 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *                  default:
  *                    [
  *                      {
- *                        "project": {
- *                          "plan": {
- *                            "topic": "Team-Management",
- *                            "target": "Build a website to support team work management",
- *                            "timeline": [
- *                              {
- *                                "stage": "Start",
- *                                "note": "Start project",
- *                                "deadline": "01/01/2023",
- *                                "_id": "64256555160f141a0235d7ba"
+ *                          "role": "Leader",
+ *                          "project": {
+ *                              "plan": {
+ *                                  "timeline": []
  *                              },
- *                              {
- *                                "stage": "Report Week 1",
- *                                "note": "Online",
- *                                "deadline": "08/01/2023",
- *                                "_id": "642555a106832b6c7442918f"
- *                              }
- *                            ]
- *                         },
- *                          "_id": "6424429abb58c59bbec2be57",
- *                          "name": "Project cua Khai edit",
- *                          "status": "Processing",
- *                          "users": [
- *                            {
- *                              "user": "64106a4a65047e0dff8ecc81",
- *                              "role": "Leader",
- *                              "_id": "6424429abb58c59bbec2be58"
- *                            }
- *                          ],
- *                          "createdAt": "20:51:16 29/03/2023",
- *                          "invite": [
- *                            {
- *                              "email": "example@gmail.com",
- *                              "role": "Member",
- *                              "_id": "642bfd9c2a7e6432547910ce"
- *                            },
- *                            {
- *                              "email": "example11@gmail.com",
- *                              "role": "Member",
- *                              "_id": "642dade1213644752b9d89d9"
- *                            }
- *                          ],
- *                          "description": "Description"
- *                        },
- *                        "role": "Leader",
- *                        "_id": "6424429abb58c59bbec2be59"
+ *                              "_id": "64306e8a057f909e03c62876",
+ *                              "name": "Project 1",
+ *                              "description": "Mô tả",
+ *                              "status": "Processing",
+ *                              "users": [
+ *                                  {
+ *                                      "user": "64306cd1057f909e03c62863",
+ *                                      "role": "Leader",
+ *                                      "_id": "64306e8a057f909e03c62877"
+ *                                  }
+ *                              ],
+ *                              "createdAt": "02:15:25 08/04/2023",
+ *                              "invite": []
+ *                          }
  *                      },
  *                      {
- *                        "project": {
- *                          "plan": {
- *                            "timeline": []
- *                          },
- *                          "_id": "642be042920f6fa78e9be1bb",
- *                          "name": "Project cua Sheissocute",
- *                          "status": "Processing",
- *                          "users": [
- *                            {
- *                              "user": "642bdfa7920f6fa78e9be1b2",
- *                              "role": "Leader",
- *                              "_id": "642be042920f6fa78e9be1bc"
- *                            },
- *                            {
- *                              "user": "64106a4a65047e0dff8ecc81",
- *                              "role": "Member",
- *                              "_id": "642e66b5b30dd95f1995b1d2"
- *                            }
- *                          ],
- *                          "createdAt": "15:17:55 04/04/2023",
- *                          "invite": [
- *                            {
- *                              "email": "example@gmail.com",
- *                              "role": "Member",
- *                              "_id": "642bfd9f2a7e6432547910d8"
- *                            }
- *                          ],
- *                          "description": "Description"
- *                        },
- *                        "role": "Member",
- *                        "_id": "642e66b5b30dd95f1995b1d1"
+ *                          "role": "Member",
+ *                          "project": {
+ *                              "plan": {
+ *                                  "timeline": []
+ *                              },
+ *                              "_id": "64307014c3da89b9e415235e",
+ *                              "name": "Project 2",
+ *                              "description": "Mô tả",
+ *                              "status": "Processing",
+ *                              "users": [
+ *                                  {
+ *                                      "user": "64306cd1057f909e03c62863",
+ *                                      "role": "Member",
+ *                                      "_id": "64307014c3da89b9e415235f"
+ *                                  },
+ *                                  {
+ *                                      "user": "64306dd7057f909e03c6286e",
+ *                                      "role": "Leader",
+ *                                      "_id": "6430705fc3da89b9e4152377"
+ *                                  }
+ *                              ],
+ *                              "createdAt": "02:30:41 08/04/2023",
+ *                              "invite": []
+ *                          }
  *                      },
- *                    ]
+ *                  ]
  *      400:
  *        description: Không tìm thấy người dùng
  *        content:
@@ -567,7 +547,7 @@ router.get("/list", verifyToken, async function (req, res) {
     // Lưu các project vào hằng projects
     const projects = user.projects;
 
-    // Tìm user trong mảng user chứa thông tin của người dùng hiện tại
+    // Tạo mảng chứa các object bao gồm role và thông tin của project
     const projectsWithRole = projects.map((projectWithUser) => {
       const { role, project } = projectWithUser;
       const user = project.users.find((user) => user.user == req.userId);
@@ -695,6 +675,9 @@ router.get("/:projectId", verifyToken, async function (req, res) {
     const project = await Project.findOne({
       _id: projectId,
       "users.user": req.userId,
+    }).populate({
+      path: "users.user",
+      select: "full_name email",
     });
     // Kiểm tra project tồn tại
     if (!project) {
@@ -707,7 +690,7 @@ router.get("/:projectId", verifyToken, async function (req, res) {
 
     // Tìm user trong mảng user chứa thông tin của người dùng hiện tại
     const userInfo = project.users.find(
-      (element) => element.user == req.userId
+      (element) => element.user._id == req.userId
     );
 
     res.json({
