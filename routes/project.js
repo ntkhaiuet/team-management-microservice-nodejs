@@ -541,7 +541,26 @@ router.get("/list", verifyToken, async function (req, res) {
       const { role, project } = projectWithUser;
       const user = project.users.find((user) => user.user == req.userId);
       return { role: user.role, project };
-    });
+    }).sort((a, b) => {
+      // Sắp xếp theo role (leader > member > reviewer)
+      const roleOrder = {
+        "Leader": 0,
+        "Member": 1,
+        "Reviewer": 2
+      };
+      const roleDiff = roleOrder[a.role] - roleOrder[b.role];
+      if (roleDiff !== 0) return roleDiff;
+
+      // Sắp xếp theo trạng thái (processing > complete)
+      const statusOrder = {
+        "Processing": 0,
+        "Complete": 1
+      };
+      return statusOrder[a.project.status] - statusOrder[b.project.status];
+    }).filter((projectWithRole) => {
+          // Lọc ra các project có trạng thái "processing" hoặc "complete"
+          return projectWithRole.project.status === "Processing" || projectWithRole.project.status === "Complete";
+        });
 
     res.json({
       success: true,
