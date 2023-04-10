@@ -89,7 +89,7 @@ const ProjectInvite = require("../models/ProjectInvite");
  *                project_id:
  *                  default: 6432490b39efd8d33bd9d23b
  *      400:
- *        description: Vui lòng nhập name/Vui lòng mời các người dùng khác nhau/Không tìm thấy người dùng/Project đã tồn tại
+ *        description: Vui lòng nhập name/Vui lòng mời các người dùng khác nhau/Người dùng được mời không tồn tại (Thêm trường usersInviteNotFound trả về mảng các object trong listUserInvite không tồn tại)/Không tìm thấy người dùng/Project đã tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -98,7 +98,18 @@ const ProjectInvite = require("../models/ProjectInvite");
  *                success:
  *                  default: false
  *                message:
- *                  default: Vui lòng nhập name/Vui lòng mời các người dùng khác nhau/Không tìm thấy người dùng/Project đã tồn tại
+ *                  default: Vui lòng nhập name/Vui lòng mời các người dùng khác nhau/Người dùng được mời không tồn tại (Thêm trường usersInviteNotFound trả về mảng các object trong listUserInvite không tồn tại)/Không tìm thấy người dùng/Project đã tồn tại
+ *                usersInviteNotFound:
+ *                  default: [
+ *                    {
+ *                      "email": "example1@gmail.com",
+ *                      "role": "Member"
+ *                    },
+ *                    {
+ *                      "email": "example2@gmail.com",
+ *                      "role": "Reviewer"
+ *                    }
+ *                  ]
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -148,6 +159,25 @@ router.post("/create", verifyToken, async (req, res) => {
   }
 
   try {
+    // Kiểm tra các người dùng được mời tồn tại
+    const existingUsers = await User.find({
+      email: { $in: listUserInvite.map((user) => user.email) },
+      email_verified: true,
+    });
+
+    const usersInviteNotFound = listUserInvite.filter(
+      (user) =>
+        !existingUsers.some((existingUser) => existingUser.email === user.email)
+    );
+
+    if (usersInviteNotFound.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Người dùng được mời không tồn tại",
+        usersInviteNotFound: usersInviteNotFound,
+      });
+    }
+
     // Kiểm tra người dùng tồn tại và lấy các project của người dùng
     const user = await User.findById(req.userId).populate("projects.project");
 

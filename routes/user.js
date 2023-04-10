@@ -638,6 +638,8 @@ router.get("/invitations/list", verifyToken, async (req, res) => {
  *                  default: true
  *                message:
  *                  default: Xác nhận phản hồi thành công
+ *                project_id:
+ *                  default: 64340fa55abd3c60a38e3dd9
  *      400:
  *        description: Không tìm thấy lời mời
  *        content:
@@ -761,6 +763,7 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Xác nhận phản hồi lời mời thành công",
+      project_id: projectId,
     });
   } catch (error) {
     console.log(error);
@@ -822,7 +825,12 @@ router.put("/outproject/:projectId", verifyToken, async (req, res) => {
 
     await Project.updateOne(
       { _id: projectId, "users.role": { $in: ["Member", "Reviewer"] } },
-      { $pull: { users: { user: req.userId } } }
+      { $pull: { users: { email: req.userEmail } } }
+    );
+
+    await ProjectInvite.updateOne(
+      { project: projectId, "users.role": { $in: ["Member", "Reviewer"] } },
+      { $pull: { users: { email: req.userEmail } } }
     );
 
     res.status(200).json({
