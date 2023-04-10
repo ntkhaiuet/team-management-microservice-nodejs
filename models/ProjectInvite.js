@@ -5,7 +5,7 @@ const formattedDate = require("../middleware/formatDate");
 
 const ProjectInviteSchema = new Schema(
   {
-    projectId: { type: Schema.Types.ObjectId, require: true },
+    project: { type: Schema.Types.ObjectId, ref: "Project" },
     users: [
       {
         _id: { type: false },

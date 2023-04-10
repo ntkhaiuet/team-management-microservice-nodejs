@@ -42,18 +42,6 @@ const ProjectInvite = require("../models/ProjectInvite");
  *        description: Mô tả
  *        status: Processing
  *        users: [{email: "ntkhaiuet@gmail.com", role: "Member"}]
- *        invite: [
- *          {
- *            "email": "example@gmail.com",
- *            "role": "Member",
- *            "status": "Joined",
- *          },
- *          {
- *            "email": "example11@gmail.com",
- *            "role": "Member",
- *            "status": "Waiting",
- *          }
- *        ]
  *        createdAt: 10:56:27 29/03/2023
  */
 
@@ -177,10 +165,9 @@ router.post("/create", verifyToken, async (req, res) => {
     // Thêm project vào tập các project của người dùng
     user.projects.push({ project: project._id, role: roleUserCreator });
 
-    // Begin: Mời các user vào project
     // Tạo 1 bản ghi trong bảng projectinvites
     let projectInvite = new ProjectInvite({
-      projectId: project._id,
+      project: project._id,
       users: [],
     });
 
@@ -194,7 +181,6 @@ router.post("/create", verifyToken, async (req, res) => {
     });
 
     await Promise.all([user.save(), projectInvite.save(), project.save()]);
-    // End: Mời các user vào project
 
     res.status(200).json({
       success: true,
@@ -617,7 +603,7 @@ router.get("/:projectId", verifyToken, async function (req, res) {
       });
     }
 
-    const projectInvite = await ProjectInvite.findOne({ projectId: projectId });
+    const projectInvite = await ProjectInvite.findOne({ project: projectId });
     // Kiểm tra projectInvite tồn tại
     if (!projectInvite) {
       return res.status(400).json({
@@ -746,7 +732,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
     await user.save();
 
     // Xóa project trong collection projectinvites
-    await ProjectInvite.findOneAndDelete({ projectId: projectId });
+    await ProjectInvite.findOneAndDelete({ project: projectId });
 
     res.status(200).json({
       success: true,
@@ -856,7 +842,7 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
       });
     }
 
-    let projectInvite = await ProjectInvite.findOne({ projectId: projectId });
+    let projectInvite = await ProjectInvite.findOne({ project: projectId });
 
     const checkEmail = _.find(projectInvite.users, { email: email });
     if (checkEmail) {

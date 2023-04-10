@@ -226,23 +226,23 @@ router.get("/", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /api/user/{id}:
+ * /api/user/{email}:
  *  get:
- *    summary: Nhận thông tin người dùng theo id
+ *    summary: Nhận thông tin người dùng theo email
  *    tags: [Users]
  *    security:
  *      - bearerAuth: []
- *    description: Nhận thông tin người dùng theo id
+ *    description: Nhận thông tin người dùng theo email
  *    parameters:
  *      - in: path
- *        name: id
+ *        name: email
  *        schema:
  *          type: string
  *        required: true
- *        description: ID của người dùng
+ *        description: Email của người dùng
  *    responses:
  *      200:
- *        description: Nhận thông tin của người dùng theo id thành công
+ *        description: Nhận thông tin của người dùng theo email thành công
  *        content:
  *          application/json:
  *            schema:
@@ -251,7 +251,34 @@ router.get("/", verifyToken, async (req, res) => {
  *                success:
  *                  default: true
  *                message:
- *                  default: Nhận thông tin của người dùng theo id thành công
+ *                  default: Nhận thông tin của người dùng theo email thành công
+ *                email:
+ *                  default: ntkhaiuet@gmail.com
+ *                full_name:
+ *                  default: ntkhaiuet
+ *                phone_number:
+ *                  default: "0376269482"
+ *                gender:
+ *                  default: Male
+ *                dob:
+ *                  default: 31/10/2001
+ *                projects:
+ *                  default: [
+ *                    {
+ *                      "project": {
+ *                        "_id": "64306e8a057f909e03c62876",
+ *                        "name": "Project 1"
+ *                      },
+ *                      "role": "Leader",
+ *                    },
+ *                    {
+ *                      "project": {
+ *                        "_id": "64307014c3da89b9e415235e",
+ *                        "name": "Project 2"
+ *                      },
+ *                      "role": "Member",
+ *                    }
+ *                  ]
  *      400:
  *        description: Không tìm thấy người dùng
  *        content:
@@ -275,14 +302,17 @@ router.get("/", verifyToken, async (req, res) => {
  *                message:
  *                  default: Lỗi hệ thống
  */
-// @route GET api/user/:id
-// @desc Nhận thông tin người dùng theo id
+// @route GET api/user/:email
+// @desc Nhận thông tin người dùng theo email
 // @access Private
-router.get("/:id", verifyToken, async (req, res) => {
-  const id = req.params.id;
+router.get("/:email", verifyToken, async (req, res) => {
+  const email = req.params.email;
 
   try {
-    const user = await User.findById(id);
+    const user = await User.findOne({ email: email }).populate({
+      path: "projects.project",
+      select: "_id name",
+    });
     if (!user) {
       return res
         .status(400)
@@ -290,9 +320,13 @@ router.get("/:id", verifyToken, async (req, res) => {
     }
     res.status(200).json({
       success: true,
-      message: "Nhận thông tin của người dùng theo id thành công",
-      full_name: user.full_name,
+      message: "Nhận thông tin của người dùng theo email thành công",
       email: user.email,
+      full_name: user.full_name,
+      phone_number: user.phone_number,
+      gender: user.gender,
+      dob: user.dob,
+      projects: user.projects,
     });
   } catch (error) {
     console.log(error);
@@ -462,10 +496,11 @@ router.put("/", verifyToken, async (req, res) => {
  * @swagger
  * /api/user/invitations/list:
  *  get:
- *    summary: Nhận thông tin về các lời mời vào project người dùng hiện tại
+ *    summary: Nhận thông tin về các lời mời vào project người dùng hiện tại (Các lời mời có status là Waiting)
  *    tags: [Users]
  *    security:
  *      - bearerAuth: []
+ *    description: Nhận thông tin về các lời mời vào project người dùng hiện tại (Các lời mời có status là Waiting)
  *    responses:
  *      200:
  *        description: Thành công
@@ -523,7 +558,7 @@ router.put("/", verifyToken, async (req, res) => {
  */
 
 // @route GET api/user/invitations/list
-// @desc Nhận thông tin về các lời mời vào project người dùng hiện tại
+// @desc Nhận thông tin về các lời mời vào project người dùng hiện tại (Các lời mời có status là Waiting)
 // @access Public
 router.get("/invitations/list", verifyToken, async (req, res) => {
   try {
@@ -537,17 +572,21 @@ router.get("/invitations/list", verifyToken, async (req, res) => {
     // Tìm các project mà user được mời vào
     let userProjectInvite = await ProjectInvite.find({
       "users.email": user.email,
-    });
+    }).populate({ path: "project", select: "name" });
 
-    // Lấy ra projectId và role của mỗi project người dùng được mời cho vào mảng data
+    // Lấy ra projectId, project_name và role của mỗi project người dùng được mời cho vào mảng data
     let data = userProjectInvite.map((projectinvite) => {
       let roleUser;
       projectinvite.users.forEach((element) => {
-        if (element.email === user.email) {
+        if (element.email === user.email && element.status === "Waiting") {
           roleUser = element.role;
         }
       });
-      return { projectId: projectinvite.projectId, role: roleUser };
+      return {
+        project_id: projectinvite.project._id,
+        project_name: projectinvite.project.name,
+        role: roleUser,
+      };
     });
 
     res.json({
@@ -665,13 +704,15 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
         // Lấy id của Leader cũ
         const oldLeader = await User.findOne({
           "projects.project": projectId,
+          "projects.role": "Leader",
         });
 
+        const oldLeaderEmail = oldLeader.email;
         const oldLeaderId = oldLeader._id;
 
         // Thay role trong project
         const updatedProject = await Project.findOneAndUpdate(
-          { _id: projectId, "users.user": oldLeaderId },
+          { _id: projectId, "users.email": oldLeaderEmail },
           { $set: { "users.$.role": "Member" } },
           { new: true }
         );
@@ -699,21 +740,20 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
       // thêm 1 project trong user
       user.projects.push({ project: projectId, role: userInvite.role });
 
-      // xóa user ở trường invite và thêm vào trường user
+      // Thêm user vào trường users trong project
       await Project.updateOne(
         { _id: projectId },
         {
-          $pull: { invite: { email: user.email } },
           $push: {
-            users: { user: user._id, role: userInvite.role },
+            users: { email: user.email, role: userInvite.role },
           },
         }
       );
     }
-    // xóa user trong projectInvite
+    // Cập nhật trạng thái user trong projectinvites
     await ProjectInvite.updateOne(
-      { projectId: projectId },
-      { $pull: { users: { email: user.email } } }
+      { project: projectId, "users.email": user.email },
+      { $set: { "users.$.status": "Joined" } }
     );
 
     await Promise.all([projectInvite.save(), project.save(), user.save()]);

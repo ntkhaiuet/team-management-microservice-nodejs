@@ -15,11 +15,11 @@ const UserSchema = new Schema(
     token: { type: String, default: null },
     projects: [
       {
+        _id: { type: false },
         project: { type: Schema.Types.ObjectId, ref: "Project" },
         role: {
           type: String,
           enum: ["Leader", "Reviewer", "Member"],
-          default: "Member",
         },
       },
     ],
