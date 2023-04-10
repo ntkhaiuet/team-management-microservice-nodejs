@@ -208,7 +208,7 @@ router.post("/change_password", verifyToken, async function (req, res) {
  */
 // @route GET api/user
 // @desc Nhận thông tin người dùng hiện tại
-// @access Public
+// @access Private
 router.get("/", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -218,6 +218,82 @@ router.get("/", verifyToken, async (req, res) => {
         .json({ success: false, message: "Không tìm thấy người dùng" });
     }
     res.json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/user/{id}:
+ *  get:
+ *    summary: Nhận thông tin người dùng theo id
+ *    tags: [Users]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Nhận thông tin người dùng theo id
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: ID của người dùng
+ *    responses:
+ *      200:
+ *        description: Nhận thông tin của người dùng theo id thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Nhận thông tin của người dùng theo id thành công
+ *      400:
+ *        description: Không tìm thấy người dùng
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Không tìm thấy người dùng
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Lỗi hệ thống
+ */
+// @route GET api/user/:id
+// @desc Nhận thông tin người dùng theo id
+// @access Private
+router.get("/:id", verifyToken, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Nhận thông tin của người dùng theo id thành công",
+      full_name: user.full_name,
+      email: user.email,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Lỗi hệ thống" });
