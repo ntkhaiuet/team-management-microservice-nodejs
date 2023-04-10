@@ -89,7 +89,7 @@ const ProjectInvite = require("../models/ProjectInvite");
  *                project_id:
  *                  default: 6432490b39efd8d33bd9d23b
  *      400:
- *        description: Thiếu trường bắt buộc/Không tìm thấy người dùng/Project đã tồn tại
+ *        description: Vui lòng nhập name/Vui lòng mời các người dùng khác nhau/Không tìm thấy người dùng/Project đã tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -98,7 +98,7 @@ const ProjectInvite = require("../models/ProjectInvite");
  *                success:
  *                  default: false
  *                message:
- *                  default: Thiếu trường bắt buộc/Không tìm thấy người dùng/Project đã tồn tại
+ *                  default: Vui lòng nhập name/Vui lòng mời các người dùng khác nhau/Không tìm thấy người dùng/Project đã tồn tại
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -143,7 +143,7 @@ router.post("/create", verifyToken, async (req, res) => {
   if (hasDuplicates) {
     return res.status(400).json({
       succes: false,
-      message: "Vui lòng nhập mời các người dùng khác nhau",
+      message: "Vui lòng mời các người dùng khác nhau",
     });
   }
 
@@ -747,7 +747,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
     // Xóa project trong collection users
     const user = await User.findById(req.userId);
     let index = user.projects.findIndex(
-      (project) => project.project === projectId
+      (project) => project.project == projectId
     );
     user.projects.splice(index, 1);
     await user.save();
@@ -807,7 +807,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
  *                message:
  *                  default: Đã gửi lời mời cho thành viên vào dự án
  *      400:
- *        description: Vui lòng nhập địa chỉ email và role/Chỉ leader mới có thể mời thành viên vào dự án/Địa chỉ email này đã được mời vào dự án
+ *        description: Vui lòng nhập địa chỉ email và role/Thành viên này đã có trong dự án/Chỉ leader mới có thể mời thành viên vào dự án/Địa chỉ email này đã được mời vào dự án
  *        content:
  *          application/json:
  *            schema:
@@ -816,7 +816,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Vui lòng nhập địa chỉ email và role/Chỉ leader mới có thể mời thành viên vào dự án/Địa chỉ email này đã được mời vào dự án
+ *                  default: Vui lòng nhập địa chỉ email và role/Thành viên này đã có trong dự án/Chỉ leader mới có thể mời thành viên vào dự án/Địa chỉ email này đã được mời vào dự án
  *      500:
  *        description: Lỗi hệ thống
  *        content:

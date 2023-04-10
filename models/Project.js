@@ -16,7 +16,7 @@ const ProjectSchema = new Schema(
       target: { type: String },
       timeline: [
         {
-          stage: { type: String, unique: true },
+          stage: { type: String },
           note: { type: String },
           deadline: { type: String },
         },
@@ -25,7 +25,7 @@ const ProjectSchema = new Schema(
     users: [
       {
         _id: { type: false },
-        email: { type: String, unique: true },
+        email: { type: String },
         role: {
           type: String,
           enum: ["Leader", "Reviewer", "Member"],
