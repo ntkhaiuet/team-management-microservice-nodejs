@@ -126,6 +126,27 @@ router.post("/create", verifyToken, async (req, res) => {
       .json({ succes: false, message: "Vui lòng nhập name" });
   }
 
+  // Kiểm tra mảng listUserInvite không trùng lặp
+  function hasDuplicateEmails(users) {
+    for (let i = 0; i < users.length; i++) {
+      for (let j = i + 1; j < users.length; j++) {
+        if (users[i].email === users[j].email) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  const hasDuplicates = hasDuplicateEmails(listUserInvite);
+  if (hasDuplicates) {
+    return res.status(400).json({
+      succes: false,
+      message: "Vui lòng nhập mời các người dùng khác nhau",
+    });
+  }
+
   try {
     // Kiểm tra người dùng tồn tại và lấy các project của người dùng
     const user = await User.findById(req.userId).populate("projects.project");
@@ -172,7 +193,7 @@ router.post("/create", verifyToken, async (req, res) => {
     });
 
     // Thêm user vào tập các user được mời của project
-    listUserInvite.forEach(async (element) => {
+    listUserInvite.forEach((element) => {
       projectInvite.users.push({
         email: element.email,
         role: element.role,

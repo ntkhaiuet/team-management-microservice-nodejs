@@ -9,7 +9,7 @@ const ProjectInviteSchema = new Schema(
     users: [
       {
         _id: { type: false },
-        email: { type: String, unique: true },
+        email: { type: String },
         role: {
           type: String,
           enum: ["Leader", "Reviewer", "Member"],
