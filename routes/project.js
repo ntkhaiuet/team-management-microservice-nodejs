@@ -248,11 +248,11 @@ router.post("/create", verifyToken, async (req, res) => {
  * @swagger
  * /api/project/edit/{id}:
  *  put:
- *    summary: Cập nhật thông tin project (truyền ít nhất 1 trong 3 trường name, description, status)
+ *    summary: Cập nhật thông tin project
  *    tags: [Projects]
  *    security:
  *      - bearerAuth: []
- *    description: Cập nhật thông tin project (truyền ít nhất 1 trong 3 trường name, description, status) (dành cho Leader)
+ *    description: Cập nhật thông tin project (dành cho Leader)
  *    parameters:
  *      - in: path
  *        name: id
@@ -268,14 +268,15 @@ router.post("/create", verifyToken, async (req, res) => {
  *            type: object
  *            properties:
  *              name:
- *                type: String
  *                default: MyProject
  *              description:
- *                type: String
  *                default: Description
  *              status:
- *                type: String
  *                default: Completed
+ *              user:
+ *                default: {"email": "ntkhaiuet@gmail.com", "role": "Leader"}
+ *              teammate:
+ *                default: [{"email": sheissocute2001@gmail.com, "role": "Member", "status": "Joined"}, {"email": 19020331@vnu.edu.vn, "role": "Member", "status": "Waiting"}]
  *    responses:
  *      200:
  *        description: Cập nhật thông tin project thành công
@@ -288,54 +289,37 @@ router.post("/create", verifyToken, async (req, res) => {
  *                  default: true
  *                message:
  *                  default: Cập nhật thông tin project thành công
- *                project:
- *                  default:
+ *                project_id:
+ *                  default: 6432d4134b4a0c0558df66da
+ *                project_name:
+ *                  default: MyProject6
+ *                project_description:
+ *                  default: Mô tả
+ *                project_status:
+ *                  default: Processing
+ *                project_createdAt:
+ *                  default: 22:03:58 09/04/2023
+ *                user:
+ *                  default: {
+ *                    "email": "ntkhaiuet@gmail.com",
+ *                    "role": "Leader",
+ *                    "status": "Joined"
+ *                  }
+ *                teammate:
+ *                  default: [
  *                    {
- *                      "plan": {
- *                        "topic": "Team-Management",
- *                        "target": "Build a website to support team work management",
- *                        "timeline": [
- *                          {
- *                            "stage": "Start",
- *                            "note": "Start project",
- *                            "deadline": "01/01/2023",
- *                            "_id": "64256555160f141a0235d7ba"
- *                          },
- *                          {
- *                            "stage": "Report Week 1",
- *                            "note": "Online",
- *                            "deadline": "08/01/2023",
- *                            "_id": "642555a106832b6c7442918f"
- *                          }
- *                        ]
- *                      },
- *                      "_id": "6424429abb58c59bbec2be57",
- *                      "name": "Project cua Khai edit",
- *                      "status": "Processing",
- *                      "users": [
- *                        {
- *                          "user": "64106a4a65047e0dff8ecc81",
- *                          "role": "Leader",
- *                          "_id": "6424429abb58c59bbec2be58"
- *                        }
- *                      ],
- *                      "createdAt": "20:51:16 29/03/2023",
- *                      "invite": [
- *                        {
- *                          "email": "example@gmail.com",
- *                          "role": "Member",
- *                          "_id": "642bfd9c2a7e6432547910ce"
- *                        },
- *                        {
- *                          "email": "example11@gmail.com",
- *                          "role": "Member",
- *                          "_id": "642dade1213644752b9d89d9"
- *                        }
- *                      ],
- *                      "description": "Description"
+ *                      "email": "example1@gmail.com",
+ *                      "role": "Member",
+ *                      "status": "Waiting"
+ *                    },
+ *                    {
+ *                      "email": "example2@gmail.com",
+ *                      "role": "Reviewer",
+ *                      "status": "Waiting"
  *                    }
+ *                  ]
  *      400:
- *        description: Vui lòng nhập name, description và status/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
+ *        description: Vui lòng nhập name, description, status, user, teammate/Project phải có 1 leader/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
  *        content:
  *          application/json:
  *            schema:
@@ -344,7 +328,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Vui lòng nhập name, description và status/ProjectId không đúng hoặc người dùng không có quyền chỉnh sửa project
+ *                  default: Vui lòng nhập name, description, status, user, teammate/Project phải có 1 leader/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -361,46 +345,83 @@ router.post("/create", verifyToken, async (req, res) => {
 // @desc Cập nhật thông tin project
 // @access Private
 router.put("/edit/:id", verifyToken, async (req, res) => {
-  const { name, description, status } = req.body;
+  const { name, description, status, user, teammate } = req.body;
   const projectId = req.params.id;
 
-  // Kiểm tra dữ liệu đầu vào và lưu vào object
-  const updateProject = {
-    name: name ? name : undefined,
-    description: description ? description : undefined,
-    status: status ? status : undefined,
-  };
-
-  // Lọc các biến đầu vào không được truyền
-  const filterUpdateProject = Object.entries(updateProject).reduce(
-    (acc, [key, value]) => {
-      if (value !== undefined) {
-        acc[key] = value;
-      }
-      return acc;
-    },
-    {}
-  );
-
-  console.log(filterUpdateProject);
-
-  // Nếu tất cả các biến đầu vào đều không được truyền
-  if (Object.keys(filterUpdateProject).length === 0) {
+  if (!name || !description || !status || !user || !teammate) {
     return res.status(400).json({
       success: false,
-      message: "Vui lòng nhập name, description và status",
+      message: "Vui lòng nhập name, description, status, user, teammate",
     });
   }
 
+  // Kiểm tra users sau khi sửa có tồn tại Leader không
+  if (user.role !== "Leader") {
+    var isExistLeader = false;
+
+    for (let i = 0; i < teammate.length; i++) {
+      if (teammate[i].role === "Leader" && teammate[i].status === "Joined") {
+        isExistLeader = true;
+        break;
+      }
+    }
+
+    if (!isExistLeader) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Project phải có 1 leader" });
+    }
+  }
+
+  // Kiểm tra user và teammate tồn tại
+  const tempUser = { email: user.email, role: user.role, status: "Joined" };
+  const tempTeammate = teammate.slice();
+  tempTeammate.push(tempUser);
+
+  const existingUsers = await User.find({
+    email: { $in: tempTeammate.map((user) => user.email) },
+    email_verified: true,
+  });
+
+  const usersInviteNotFound = tempTeammate.filter(
+    (user) =>
+      !existingUsers.some((existingUser) => existingUser.email === user.email)
+  );
+
+  if (usersInviteNotFound.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Người dùng trong user hoặc teammate không tồn tại",
+      usersInviteNotFound: usersInviteNotFound,
+    });
+  }
+
+  // Lọc các users đã join project
+  const projectUsers = [];
+  for (let i = 0; i < teammate.length; i++) {
+    if (teammate[i].status === "Joined") {
+      projectUsers.push({ email: teammate[i].email, role: teammate[i].role });
+    }
+  }
+  projectUsers.push(user);
+
+  // Dữ liệu cần cập nhật
+  const conditionUpdateProject = {
+    name: name,
+    description: description,
+    status: status,
+    users: projectUsers,
+  };
+
   try {
-    // Cập nhật tên, mô tả của project có _id là projectId, người dùng hiện tại là Leader của project đó
+    // Cập nhật name, description, status, user, teammate của project có _id là projectId, người dùng hiện tại là Leader của project đó
     const updateProject = await Project.findOneAndUpdate(
       {
         _id: projectId,
         "users.user": req.userId,
         "users.role": "Leader",
       },
-      filterUpdateProject,
+      conditionUpdateProject,
       {
         new: true,
       }
@@ -415,10 +436,37 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
       });
     }
 
+    // Cập nhật users trong projectinvites
+    const updateProjectInvites = await ProjectInvite.findOneAndUpdate(
+      {
+        project: projectId,
+      },
+      {
+        users: teammate,
+      },
+      {
+        new: true,
+      }
+    );
+
+    // Nếu cập nhật không thành công
+    if (!updateProjectInvites) {
+      return res.status(400).json({
+        success: false,
+        message: "ProjectId không đúng",
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Cập nhật thông tin project thành công",
-      project: updateProject,
+      project_id: updateProject._id,
+      project_name: updateProject.name,
+      project_description: updateProject.description,
+      project_status: updateProject.status,
+      project_createdAt: updateProject.createdAt,
+      user,
+      teammate,
     });
   } catch (error) {
     console.log(error);
