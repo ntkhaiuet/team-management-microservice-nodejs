@@ -649,14 +649,26 @@ router.get("/list", verifyToken, async function (req, res) {
  *                teammate:
  *                  default: [
  *                    {
- *                      "email": "example1@gmail.com",
+ *                      "email": "sheissocute2001@gmail.com",
  *                      "role": "Member",
- *                      "status": "Waiting"
+ *                      "status": "Joined",
+ *                      "detail": {
+ *                        "full_name": "sheissocute",
+ *                        "dob": null,
+ *                        "phone_number": null,
+ *                        "gender": null
+ *                      }
  *                    },
  *                    {
- *                      "email": "example2@gmail.com",
- *                      "role": "Reviewer",
- *                      "status": "Waiting"
+ *                      "email": "sheissocute2001@gmail.com",
+ *                      "role": "Member",
+ *                      "status": "Joined",
+ *                      "detail": {
+ *                        "full_name": "sheissocute",
+ *                        "dob": null,
+ *                        "phone_number": null,
+ *                        "gender": null
+ *                      }
  *                    }
  *                  ]
  *      400:
@@ -731,6 +743,28 @@ router.get("/:projectId", verifyToken, async function (req, res) {
     // Xóa userInfo trong mảng
     listUnique.splice(index, 1);
 
+    // Thêm trường detail trong teammate
+    const promises = listUnique.map((item) => {
+      return User.findOne({ email: item.email });
+    });
+
+    const usersInTeammate = await Promise.all(promises);
+
+    const listUniqueWithDetails = listUnique.map((item, index) => {
+      const userByEmail = usersInTeammate[index];
+      return {
+        email: item.email,
+        role: item.role,
+        status: item.status,
+        detail: {
+          full_name: userByEmail.full_name,
+          dob: userByEmail.dob,
+          phone_number: userByEmail.phone_number,
+          gender: userByEmail.gender,
+        },
+      };
+    });
+
     res.json({
       success: true,
       message: "Lấy thông tin project thành công",
@@ -740,7 +774,7 @@ router.get("/:projectId", verifyToken, async function (req, res) {
       project_status: project.status,
       project_createdAt: project.createdAt,
       user: userInfo,
-      teammate: listUnique,
+      teammate: listUniqueWithDetails,
     });
   } catch (error) {
     console.log(error);
