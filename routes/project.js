@@ -319,7 +319,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                    }
  *                  ]
  *      400:
- *        description: Vui lòng nhập name, description, status, user, teammate/Project phải có 1 leader/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
+ *        description: Vui lòng nhập name, description, status, user, teammate/Project phải có 1 leader là thành viên đã tham gia nhóm/Tên project đã tồn tại/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
  *        content:
  *          application/json:
  *            schema:
@@ -328,7 +328,20 @@ router.post("/create", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Vui lòng nhập name, description, status, user, teammate/Project phải có 1 leader/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
+ *                  default: Vui lòng nhập name, description, status, user, teammate/Project phải có 1 leader là thành viên đã tham gia nhóm/Tên project đã tồn tại/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
+ *                usersNotFound:
+ *                  default: [
+ *                    {
+ *                      "email": "example1@gmail.com",
+ *                      "role": "Member",
+ *                      "status": "Waiting"
+ *                    },
+ *                    {
+ *                      "email": "example2@gmail.com",
+ *                      "role": "Reviewer",
+ *                      "status": "Waiting"
+ *                    }
+ *                  ]
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -348,6 +361,7 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
   const { name, description, status, user, teammate } = req.body;
   const projectId = req.params.id;
 
+  // Kiểm tra các trường bắt buộc
   if (!name || !description || !status || !user || !teammate) {
     return res.status(400).json({
       success: false,
@@ -367,53 +381,62 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
     }
 
     if (!isExistLeader) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Project phải có 1 leader" });
+      return res.status(400).json({
+        success: false,
+        message: "Project phải có 1 leader là thành viên đã tham gia nhóm",
+      });
     }
   }
-
-  // Kiểm tra user và teammate tồn tại
-  const tempUser = { email: user.email, role: user.role, status: "Joined" };
-  const tempTeammate = teammate.slice();
-  tempTeammate.push(tempUser);
-
-  const existingUsers = await User.find({
-    email: { $in: tempTeammate.map((user) => user.email) },
-    email_verified: true,
-  });
-
-  const usersInviteNotFound = tempTeammate.filter(
-    (user) =>
-      !existingUsers.some((existingUser) => existingUser.email === user.email)
-  );
-
-  if (usersInviteNotFound.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: "Người dùng trong user hoặc teammate không tồn tại",
-      usersInviteNotFound: usersInviteNotFound,
-    });
-  }
-
-  // Lọc các users đã join project
-  const projectUsers = [];
-  for (let i = 0; i < teammate.length; i++) {
-    if (teammate[i].status === "Joined") {
-      projectUsers.push({ email: teammate[i].email, role: teammate[i].role });
-    }
-  }
-  projectUsers.push(user);
-
-  // Dữ liệu cần cập nhật
-  const conditionUpdateProject = {
-    name: name,
-    description: description,
-    status: status,
-    users: projectUsers,
-  };
 
   try {
+    // Kiểm tra name project là duy nhất với mỗi user
+    const checkNameProject = await Project.findOne({ name: name });
+    if (checkNameProject) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Tên project đã tồn tại" });
+    }
+
+    // Kiểm tra user và teammate tồn tại
+    const tempUser = { email: user.email, role: user.role, status: "Joined" };
+    const tempTeammate = teammate.slice();
+    tempTeammate.push(tempUser);
+
+    const existingUsers = await User.find({
+      email: { $in: tempTeammate.map((user) => user.email) },
+      email_verified: true,
+    });
+
+    const usersNotFound = tempTeammate.filter(
+      (user) =>
+        !existingUsers.some((existingUser) => existingUser.email === user.email)
+    );
+
+    if (usersNotFound.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Người dùng trong user hoặc teammate không tồn tại",
+        usersNotFound: usersNotFound,
+      });
+    }
+
+    // Lọc các users đã join project
+    const projectUsers = [];
+    for (let i = 0; i < teammate.length; i++) {
+      if (teammate[i].status === "Joined") {
+        projectUsers.push({ email: teammate[i].email, role: teammate[i].role });
+      }
+    }
+    projectUsers.push(user);
+
+    // Dữ liệu cần cập nhật
+    const conditionUpdateProject = {
+      name: name,
+      description: description,
+      status: status,
+      users: projectUsers,
+    };
+
     // Cập nhật name, description, status, user, teammate của project có _id là projectId, người dùng hiện tại là Leader của project đó
     const updateProject = await Project.findOneAndUpdate(
       {
@@ -593,41 +616,42 @@ router.get("/list", verifyToken, async function (req, res) {
     let count_completed = 0;
     let count_processing = 0;
     let filteredProjects = await Promise.all(
-        projects.map(async (projectWithUser) => {
-          if (projectWithUser.project.status === "Completed") {
-            count_completed += 1;
-          } else {
-            count_processing += 1
-          }
-          // Lấy user hiện tại
-          const currentUser = projectWithUser.project.users.find(
-              (users) => users.email === user.email
-          );
-          return {
-            id: projectWithUser.project.id,
-            name: projectWithUser.project.name,
-            description: projectWithUser.project.description,
-            status: projectWithUser.project.status,
-            user: {
-              email: currentUser.email,
-              role: currentUser.role,
-            },
-          };
-        })
+      projects.map(async (projectWithUser) => {
+        if (projectWithUser.project.status === "Completed") {
+          count_completed += 1;
+        } else {
+          count_processing += 1;
+        }
+        // Lấy user hiện tại
+        const currentUser = projectWithUser.project.users.find(
+          (users) => users.email === user.email
+        );
+        return {
+          id: projectWithUser.project.id,
+          name: projectWithUser.project.name,
+          description: projectWithUser.project.description,
+          status: projectWithUser.project.status,
+          user: {
+            email: currentUser.email,
+            role: currentUser.role,
+          },
+        };
+      })
     );
     if (name) {
       filteredProjects = filteredProjects.filter((project) =>
-          project.project_name.includes(name)
+        project.project_name.includes(name)
       );
     }
     if (role) {
       filteredProjects = filteredProjects.filter(
-          (project) => project.user.role === role
+        (project) => project.user.role === role
       );
     }
     if (status) {
       filteredProjects = filteredProjects.filter(
-          (project) => project.project_status.toLowerCase() === status.toLowerCase()
+        (project) =>
+          project.project_status.toLowerCase() === status.toLowerCase()
       );
     }
 
@@ -637,7 +661,7 @@ router.get("/list", verifyToken, async function (req, res) {
       data: {
         projects: filteredProjects,
         total_processing: count_processing,
-        total_completed: count_completed
+        total_completed: count_completed,
       },
     });
   } catch (error) {
