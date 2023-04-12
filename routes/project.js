@@ -613,45 +613,37 @@ router.get("/list", verifyToken, async function (req, res) {
 
     // Lưu các project vào hằng projects
     const projects = user.projects;
-    let count_completed = 0;
-    let count_processing = 0;
     let filteredProjects = await Promise.all(
-      projects.map(async (projectWithUser) => {
-        if (projectWithUser.project.status === "Completed") {
-          count_completed += 1;
-        } else {
-          count_processing += 1;
-        }
-        // Lấy user hiện tại
-        const currentUser = projectWithUser.project.users.find(
-          (users) => users.email === user.email
-        );
-        return {
-          id: projectWithUser.project.id,
-          name: projectWithUser.project.name,
-          description: projectWithUser.project.description,
-          status: projectWithUser.project.status,
-          user: {
-            email: currentUser.email,
-            role: currentUser.role,
-          },
-        };
-      })
+        projects.map(async (projectWithUser) => {
+          // Lấy user hiện tại
+          const currentUser = projectWithUser.project.users.find(
+              (users) => users.email === user.email
+          );
+          return {
+            id: projectWithUser.project.id,
+            name: projectWithUser.project.name,
+            description: projectWithUser.project.description,
+            status: projectWithUser.project.status,
+            user: {
+              email: currentUser.email,
+              role: currentUser.role,
+            },
+          };
+        })
     );
     if (name) {
       filteredProjects = filteredProjects.filter((project) =>
-        project.project_name.includes(name)
+          project.name.toLowerCase().includes(name.toLowerCase())
       );
     }
     if (role) {
       filteredProjects = filteredProjects.filter(
-        (project) => project.user.role === role
+          (project) => project.user.role.toLowerCase().includes(role.toLowerCase())
       );
     }
     if (status) {
       filteredProjects = filteredProjects.filter(
-        (project) =>
-          project.project_status.toLowerCase() === status.toLowerCase()
+          (project) => project.status.toLowerCase().includes(status.toLowerCase())
       );
     }
 
@@ -659,9 +651,7 @@ router.get("/list", verifyToken, async function (req, res) {
       success: true,
       message: "Lấy danh sách thành công",
       data: {
-        projects: filteredProjects,
-        total_processing: count_processing,
-        total_completed: count_completed,
+        projects: filteredProjects
       },
     });
   } catch (error) {
