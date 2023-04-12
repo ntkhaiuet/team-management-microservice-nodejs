@@ -482,6 +482,25 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *    tags: [Projects]
  *    security:
  *      - bearerAuth: []
+ *    parameters:
+ *      - in: query
+ *        name: name
+ *        schema:
+ *          type: string
+ *        required: false
+ *        description: name của project
+ *      - in: query
+ *        name: role
+ *        schema:
+ *          type: string
+ *        required: false
+ *        description: role của user tham gia project
+ *      - in: query
+ *        name: status
+ *        schema:
+ *          type: string
+ *        required: false
+ *        description: status của project
  *    responses:
  *      200:
  *        description: Lấy ra danh sách thành công
@@ -495,56 +514,43 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *                message:
  *                  default: Lấy danh sách thành công
  *                data:
- *                  default:
- *                    [
- *                      {
- *                          "role": "Leader",
- *                          "project": {
- *                              "plan": {
- *                                  "timeline": []
- *                              },
- *                              "_id": "64306e8a057f909e03c62876",
- *                              "name": "Project 1",
- *                              "description": "Mô tả",
- *                              "status": "Processing",
- *                              "users": [
- *                                  {
- *                                      "user": "64306cd1057f909e03c62863",
- *                                      "role": "Leader",
- *                                      "_id": "64306e8a057f909e03c62877"
- *                                  }
- *                              ],
- *                              "createdAt": "02:15:25 08/04/2023",
- *                              "invite": []
- *                          }
- *                      },
- *                      {
- *                          "role": "Member",
- *                          "project": {
- *                              "plan": {
- *                                  "timeline": []
- *                              },
- *                              "_id": "64307014c3da89b9e415235e",
- *                              "name": "Project 2",
- *                              "description": "Mô tả",
- *                              "status": "Processing",
- *                              "users": [
- *                                  {
- *                                      "user": "64306cd1057f909e03c62863",
- *                                      "role": "Member",
- *                                      "_id": "64307014c3da89b9e415235f"
- *                                  },
- *                                  {
- *                                      "user": "64306dd7057f909e03c6286e",
- *                                      "role": "Leader",
- *                                      "_id": "6430705fc3da89b9e4152377"
- *                                  }
- *                              ],
- *                              "createdAt": "02:30:41 08/04/2023",
- *                              "invite": []
- *                          }
- *                      },
- *                  ]
+ *                  type: object
+ *                  properties:
+ *                    projectsWithRole:
+ *                      type: array
+ *                      items:
+ *                        type: object
+ *                        properties:
+ *                          project_id:
+ *                            type: string
+ *                          project_name:
+ *                            type: string
+ *                          project_description:
+ *                            type: string
+ *                          project_status:
+ *                            type: string
+ *                          project_plan:
+ *                            type: object
+ *                            properties:
+ *                              timeline:
+ *                                type: array
+ *                                items:
+ *                                  type: object
+ *                      user:
+ *                        type: object
+ *                        properties:
+ *                          email:
+ *                            type: string
+ *                          role:
+ *                            type: string
+ *                      teammates:
+ *                        type: array
+ *                        items:
+ *                          type: object
+ *                  total_processing:
+ *                    type: integer
+ *                  total_completed:
+ *                    type: integer
  *      400:
  *        description: Không tìm thấy người dùng
  *        content:
@@ -573,6 +579,7 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
 // @access Private
 router.get("/list", verifyToken, async function (req, res) {
   try {
+    const { name, role, status } = req.query;
     // Kiểm tra người dùng tồn tại và lấy các project của người dùng
     const user = await User.findById(req.userId).populate("projects.project");
     if (!user) {
@@ -583,18 +590,55 @@ router.get("/list", verifyToken, async function (req, res) {
 
     // Lưu các project vào hằng projects
     const projects = user.projects;
-
-    // Tạo mảng chứa các object bao gồm role và thông tin của project
-    const projectsWithRole = projects.map((projectWithUser) => {
-      const { role, project } = projectWithUser;
-      const user = project.users.find((user) => user.user == req.userId);
-      return { role: user.role, project };
-    });
+    let count_completed = 0;
+    let count_processing = 0;
+    let filteredProjects = await Promise.all(
+        projects.map(async (projectWithUser) => {
+          if (projectWithUser.project.status === "Completed") {
+            count_completed += 1;
+          } else {
+            count_processing += 1
+          }
+          // Lấy user hiện tại
+          const currentUser = projectWithUser.project.users.find(
+              (users) => users.email === user.email
+          );
+          return {
+            id: projectWithUser.project.id,
+            name: projectWithUser.project.name,
+            description: projectWithUser.project.description,
+            status: projectWithUser.project.status,
+            user: {
+              email: currentUser.email,
+              role: currentUser.role,
+            },
+          };
+        })
+    );
+    if (name) {
+      filteredProjects = filteredProjects.filter((project) =>
+          project.project_name.includes(name)
+      );
+    }
+    if (role) {
+      filteredProjects = filteredProjects.filter(
+          (project) => project.user.role === role
+      );
+    }
+    if (status) {
+      filteredProjects = filteredProjects.filter(
+          (project) => project.project_status.toLowerCase() === status.toLowerCase()
+      );
+    }
 
     res.json({
       success: true,
       message: "Lấy danh sách thành công",
-      data: projectsWithRole,
+      data: {
+        projects: filteredProjects,
+        total_processing: count_processing,
+        total_completed: count_completed
+      },
     });
   } catch (error) {
     console.log(error);
