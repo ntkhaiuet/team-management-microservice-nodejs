@@ -502,7 +502,7 @@ router.put("/", verifyToken, async (req, res) => {
  *      - bearerAuth: []
  *    parameters:
  *      - in: query
- *        name: name
+ *        name: project_name
  *        schema:
  *          type: string
  *        required: false
@@ -605,6 +605,20 @@ router.get("/invitations/list", verifyToken, async (req, res) => {
         role: roleUser,
       };
     });
+
+    const { project_name, role } = req.query;
+    if (project_name) {
+      data = data.filter((project) =>
+        project.project_name.toLowerCase().includes(project_name.toLowerCase())
+      );
+    }
+
+    // Lọc dựa trên role
+    if (role) {
+      data = data.filter((project) =>
+        project.role.toLowerCase().includes(role.toLowerCase())
+      );
+    }
 
     res.json({
       success: true,
@@ -853,6 +867,111 @@ router.put("/outproject/:projectId", verifyToken, async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Rời khỏi project thành công",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/user/projects/count:
+ *  get:
+ *    summary: Đếm các trạng thái project của user
+ *    tags: [Users]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Đếm các trạng thái project của user
+ *    responses:
+ *      200:
+ *        description: Thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  type: boolean
+ *                  default: true
+ *                message:
+ *                  type: string
+ *                  default: Lấy thông tin thành công
+ *                data:
+ *                  type: object
+ *                  properties:
+ *                    countPending:
+ *                      type: integer
+ *                      description: Số lượng dự án đang chờ xử lý
+ *                      example: 0
+ *                    countProcessing:
+ *                      type: integer
+ *                      description: Số lượng dự án đang xử lý
+ *                      example: 0
+ *                    countCompleted:
+ *                      type: integer
+ *                      description: Số lượng dự án đã hoàn thành
+ *                      example: 0
+ *      400:
+ *        description: Không tìm thấy người dùng
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  type: boolean
+ *                  default: false
+ *                message:
+ *                  type: string
+ *                  default: Không tìm thấy người dùng
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  type: boolean
+ *                  default: false
+ *                message:
+ *                  type: string
+ *                  default: Lỗi hệ thống
+ */
+
+// @access Public
+router.get("/projects/count", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
+    }
+
+    const userProjectInviteCount = await ProjectInvite.countDocuments({
+      "users.email": user.email,
+    });
+
+    const userProjectProcessingCount = await Project.countDocuments({
+      status: "Processing",
+      "users.email": user.email,
+    });
+
+    const userProjectCompletedCount = await Project.countDocuments({
+      status: "Completed",
+      "users.email": user.email,
+    });
+
+    res.json({
+      success: true,
+      message: "Lấy thông tin thành công",
+      data: {
+        countPending: userProjectInviteCount,
+        countProcessing: userProjectProcessingCount,
+        countCompleted: userProjectCompletedCount,
+      },
     });
   } catch (error) {
     console.log(error);
