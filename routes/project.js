@@ -588,7 +588,9 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
 // @desc Lấy list project của người dùng
 // @access Private
 router.get("/list", verifyToken, async function (req, res) {
-  const { name, role, status } = req.query;
+  const name = req.query.name;
+  const role = req.query.role;
+  const status = req.query.status;
 
   try {
     // Kiểm tra người dùng tồn tại và lấy các project của người dùng

@@ -564,6 +564,9 @@ router.put("/", verifyToken, async (req, res) => {
 // @desc Nhận thông tin về các lời mời vào project người dùng hiện tại (Các lời mời có status là Waiting)
 // @access Public
 router.get("/invitations/list", verifyToken, async (req, res) => {
+  const project_name = req.query.project_name;
+  const role = req.query.role;
+
   try {
     const user = await User.findById(req.userId);
     if (!user) {
@@ -592,7 +595,7 @@ router.get("/invitations/list", verifyToken, async (req, res) => {
       };
     });
 
-    const { project_name, role } = req.query;
+    // Lọc dựa trên project_name
     if (project_name) {
       data = data.filter((project) =>
         project.project_name.toLowerCase().includes(project_name.toLowerCase())
