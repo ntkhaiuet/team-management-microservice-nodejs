@@ -523,10 +523,8 @@ router.put("/", verifyToken, async (req, res) => {
  *              type: object
  *              properties:
  *                success:
- *                  type: boolean
  *                  default: true
  *                message:
- *                  type: string
  *                  default: Lấy danh sách lời mời thành công
  *                data:
  *                  type: array
@@ -534,18 +532,11 @@ router.put("/", verifyToken, async (req, res) => {
  *                    type: object
  *                    properties:
  *                      project_name:
- *                        type: string
- *                        description: Tên của dự án được mời
- *                        example: Test
+ *                        default: Test
  *                      project_id:
- *                        type: string
- *                        description: ID của dự án được mời
- *                        example: 6422f6b7696dbe537c03d71a
+ *                        default: 6422f6b7696dbe537c03d71a
  *                      role:
- *                        type: string
- *                        description: Vai trò của người dùng trong dự án
- *                        example: Member
-
+ *                        default: Member
  *      400:
  *        description: Không tìm thấy người dùng
  *        content:
@@ -554,10 +545,8 @@ router.put("/", verifyToken, async (req, res) => {
  *              type: object
  *              properties:
  *                success:
- *                  type: boolean
  *                  default: false
  *                message:
- *                  type: string
  *                  default: Không tìm thấy người dùng
  *      500:
  *        description: Lỗi hệ thống
@@ -567,13 +556,10 @@ router.put("/", verifyToken, async (req, res) => {
  *              type: object
  *              properties:
  *                success:
- *                  type: boolean
  *                  default: false
  *                message:
- *                  type: string
  *                  default: Lỗi hệ thống
  */
-
 // @route GET api/user/invitations/list
 // @desc Nhận thông tin về các lời mời vào project người dùng hiện tại (Các lời mời có status là Waiting)
 // @access Public
@@ -892,26 +878,15 @@ router.put("/outproject/:projectId", verifyToken, async (req, res) => {
  *              type: object
  *              properties:
  *                success:
- *                  type: boolean
  *                  default: true
  *                message:
- *                  type: string
  *                  default: Lấy thông tin thành công
  *                data:
- *                  type: object
- *                  properties:
- *                    countPending:
- *                      type: integer
- *                      description: Số lượng dự án đang chờ xử lý
- *                      example: 0
- *                    countProcessing:
- *                      type: integer
- *                      description: Số lượng dự án đang xử lý
- *                      example: 0
- *                    countCompleted:
- *                      type: integer
- *                      description: Số lượng dự án đã hoàn thành
- *                      example: 0
+ *                  default: {
+ *                    "countPending": 0,
+ *                    "countProcessing": 0,
+ *                    "countCompleted": 0
+ *                  }
  *      400:
  *        description: Không tìm thấy người dùng
  *        content:
@@ -920,10 +895,8 @@ router.put("/outproject/:projectId", verifyToken, async (req, res) => {
  *              type: object
  *              properties:
  *                success:
- *                  type: boolean
  *                  default: false
  *                message:
- *                  type: string
  *                  default: Không tìm thấy người dùng
  *      500:
  *        description: Lỗi hệ thống
@@ -933,14 +906,13 @@ router.put("/outproject/:projectId", verifyToken, async (req, res) => {
  *              type: object
  *              properties:
  *                success:
- *                  type: boolean
  *                  default: false
  *                message:
- *                  type: string
  *                  default: Lỗi hệ thống
  */
-
-// @access Public
+// @route GET api/user/projects/count
+// @desc Đếm các trạng thái project của user
+// @access Private
 router.get("/projects/count", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.userId);

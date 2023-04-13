@@ -536,44 +536,31 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *                  default: true
  *                message:
  *                  default: Lấy danh sách thành công
- *                data:
- *                  type: object
- *                  properties:
- *                    projectsWithRole:
- *                      type: array
- *                      items:
- *                        type: object
- *                        properties:
- *                          project_id:
- *                            type: string
- *                          project_name:
- *                            type: string
- *                          project_description:
- *                            type: string
- *                          project_status:
- *                            type: string
- *                          project_plan:
- *                            type: object
- *                            properties:
- *                              timeline:
- *                                type: array
- *                                items:
- *                                  type: object
- *                      user:
- *                        type: object
- *                        properties:
- *                          email:
- *                            type: string
- *                          role:
- *                            type: string
- *                      teammates:
- *                        type: array
- *                        items:
- *                          type: object
- *                  total_processing:
- *                    type: integer
- *                  total_completed:
- *                    type: integer
+ *                projects:
+ *                  default: [
+ *                    {
+ *                      "id": "64340d4cf69cad6d56eb26ce",
+ *                      "name": "MyProjec3",
+ *                      "description": "Mô tả",
+ *                      "status": "Processing",
+ *                      "progress": "0.90",
+ *                      "user": {
+ *                        "email": "ntkhaiuet@gmail.com",
+ *                        "role": "Leader"
+ *                      }
+ *                    },
+ *                    {
+ *                      "id": "64340fa55abd3c60a38e3dd9",
+ *                      "name": "MyProjec4",
+ *                      "description": "Mô tả",
+ *                      "status": "Completed",
+ *                      "progress": "1.00",
+ *                      "user": {
+ *                        "email": "ntkhaiuet@gmail.com",
+ *                        "role": "Leader"
+ *                      }
+ *                    }
+ *                  ]
  *      400:
  *        description: Không tìm thấy người dùng
  *        content:
@@ -624,6 +611,10 @@ router.get("/list", verifyToken, async function (req, res) {
           name: projectWithUser.project.name,
           description: projectWithUser.project.description,
           status: projectWithUser.project.status,
+          progress:
+            projectWithUser.project.status === "Completed"
+              ? 1
+              : Math.random().toFixed(2),
           user: {
             email: currentUser.email,
             role: currentUser.role,
@@ -650,9 +641,7 @@ router.get("/list", verifyToken, async function (req, res) {
     res.json({
       success: true,
       message: "Lấy danh sách thành công",
-      data: {
-        projects: filteredProjects,
-      },
+      projects: filteredProjects,
     });
   } catch (error) {
     console.log(error);
