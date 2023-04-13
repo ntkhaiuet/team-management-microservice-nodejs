@@ -537,7 +537,6 @@ router.put("/", verifyToken, async (req, res) => {
  *                        type: string
  *                        description: Tên của dự án được mời
  *                        example: Test
- *                    properties:
  *                      project_id:
  *                        type: string
  *                        description: ID của dự án được mời
