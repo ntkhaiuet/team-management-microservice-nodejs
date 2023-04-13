@@ -502,7 +502,7 @@ router.put("/", verifyToken, async (req, res) => {
  *      - bearerAuth: []
  *    parameters:
  *      - in: query
- *        name: name
+ *        name: project_name
  *        schema:
  *          type: string
  *        required: false
@@ -533,7 +533,12 @@ router.put("/", verifyToken, async (req, res) => {
  *                  items:
  *                    type: object
  *                    properties:
- *                      projectId:
+ *                      project_name:
+ *                        type: string
+ *                        description: Tên của dự án được mời
+ *                        example: Test
+ *                    properties:
+ *                      project_id:
  *                        type: string
  *                        description: ID của dự án được mời
  *                        example: 6422f6b7696dbe537c03d71a
