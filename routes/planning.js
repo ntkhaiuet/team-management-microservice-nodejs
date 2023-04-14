@@ -72,7 +72,6 @@ const Project = require("../models/Project");
  *                                  "stage": "Start",
  *                                  "note": "Start project",
  *                                  "deadline": "01/01/2023",
- *                                  "_id": "64254efdc89898ddd967e1fa"
  *                              }
  *                          ]
  *                      }
@@ -203,13 +202,11 @@ router.post("/create/:id", verifyToken, async (req, res) => {
  *                              "stage": "Start",
  *                              "note": "Start project",
  *                              "deadline": "01/01/2023",
- *                              "_id": "6425557606832b6c7442918a"
  *                            },
  *                            {
  *                              "stage": "Report Week 1",
  *                              "note": "Online",
  *                              "deadline": "08/01/2023",
- *                              "_id": "642555a106832b6c7442918f"
  *                            }
  *                          ]
  *                        }
@@ -282,11 +279,11 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  * @swagger
  * /api/planning/update/{id}:
  *  put:
- *    summary: Cập nhật kế hoạch cho project, nếu không thay đổi stage thì không cần gửi newStage hoặc gửi newStage = oldStage
+ *    summary: Cập nhật kế hoạch cho project
  *    tags: [Planning]
  *    security:
  *      - bearerAuth: []
- *    description: Cập nhật kế hoạch cho project, nếu không thay đổi stage thì không cần gửi newStage hoặc gửi newStage = oldStage
+ *    description: Cập nhật kế hoạch cho project (nếu chỉ thay đổi topic hoặc target thì chỉ truyền topic hoặc target, nếu cần thay đổi stage thì truyền oldStage và newStage, nếu không thay đổi stage thì không cần truyền newStage)
  *    parameters:
  *      - in: path
  *        name: id
@@ -302,23 +299,17 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *            type: object
  *            properties:
  *              topic:
- *                type: String
  *                default: Team-Management
  *              target:
- *                type: String
  *                default: Build a website to support team work management
  *              oldStage:
- *                type: String
  *                default: Start
  *              newStage:
- *                type: String
  *                default: ReportWeek1
  *              note:
- *                type: String
  *                default: Online
  *              deadline:
- *                type: String
- *                default: 01/01/2023
+ *                default: 08/01/2023
  *    responses:
  *      200:
  *        description: Cập nhật kế hoạch cho project thành công
@@ -331,22 +322,25 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *                  default: true
  *                message:
  *                  default: Cập nhật kế hoạch cho project thành công
- *                plan:
- *                  default:
- *                      {
- *                          "topic": "Team-Management",
- *                          "target": "Build a website to support team work management",
- *                          "timeline": [
- *                              {
- *                                  "stage": "ReportWeek1",
- *                                  "note": "Online",
- *                                  "deadline": "01/01/2023",
- *                                  "_id": "64254efdc89898ddd967e1fa"
- *                              }
- *                          ]
- *                      }
+ *                topic:
+ *                  default: Team-Management
+ *                target:
+ *                  default: Build a website to support team work management
+ *                timeline:
+ *                  default: [
+ *                    {
+ *                      "stage": "Start",
+ *                      "deadline": "01/01/2023",
+ *                      "note": "Online"
+ *                    },
+ *                    {
+ *                      "stage": "ReportWeek1",
+ *                      "note": "Online",
+ *                      "deadline": "08/01/2023"
+ *                    }
+ *                  ]
  *      400:
- *        description: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền cập nhật kế hoạch cho project
+ *        description: Vui lòng nhập topic hoặc target hoặc cụm oldStage, note, deadline/Vui lòng nhập note hoặc deadline để cập nhật stage/ProjectId không đúng hoặc người dùng không có quyền cập nhật kế hoạch cho project/oldStage không tồn tại/newStage đã tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -355,7 +349,7 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền cập nhật kế hoạch cho project
+ *                  default: Vui lòng nhập topic hoặc target hoặc cụm oldStage, note, deadline/Vui lòng nhập note hoặc deadline để cập nhật stage/ProjectId không đúng hoặc người dùng không có quyền cập nhật kế hoạch cho project/oldStage không tồn tại/newStage đã tồn tại
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -376,11 +370,20 @@ router.put("/update/:id", verifyToken, async (req, res) => {
   let newStage = req.body.newStage;
   const projectId = req.params.id;
 
-  //   Xác thực cơ bản
-  if (!topic || !target || !oldStage || !deadline) {
-    return res
-      .status(400)
-      .json({ succes: false, message: "Thiếu trường bắt buộc" });
+  // Xác thực cơ bản
+  if (!topic && !target && !oldStage) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Vui lòng nhập topic hoặc target hoặc cụm oldStage, note, deadline",
+    });
+  }
+
+  if (oldStage && !note && !deadline) {
+    return res.status(400).json({
+      success: false,
+      message: "Vui lòng nhập note hoặc deadline để cập nhật stage",
+    });
   }
 
   try {
@@ -400,30 +403,66 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       });
     }
 
-    //   Khi không thay đổi stage
-    if (oldStage === newStage || !newStage) {
-      newStage = oldStage;
+    if (topic) {
+      planningProject.plan.topic = topic;
     }
 
-    // Lấy vị trí của oldStage trong mảng timeline
+    if (target) {
+      planningProject.plan.target = target;
+    }
+
+    // Nếu oldStage và newStage đều không được truyền
+    if (!oldStage && !newStage) {
+      await planningProject.save();
+      return res.status(200).json({
+        success: true,
+        message: "Cập nhật kế hoạch cho project thành công",
+        topic: planningProject.plan.topic,
+        target: planningProject.plan.target,
+        timeline: planningProject.plan.timeline,
+      });
+    }
+
+    // Lấy vị trí của stage trong mảng timeline
     let indexTimeline = planningProject.plan.timeline.findIndex(
       (element) => element.stage === oldStage
     );
 
-    // Cập nhật thông tin plan mới vào project
-    planningProject.plan.topic = topic;
-    planningProject.plan.target = target;
-    planningProject.plan.timeline[indexTimeline] = {
-      stage: newStage,
-      note: note,
-      deadline: deadline,
-    };
+    // Kiểm tra oldStage tồn tại
+    if (indexTimeline < 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "oldStage không tồn tại" });
+    }
+
+    // Nếu thay đổi stage
+    if (newStage && newStage !== oldStage) {
+      const checkExistNewStage = planningProject.plan.timeline.find(
+        (timeline) => timeline.stage === newStage
+      );
+
+      if (checkExistNewStage) {
+        return res
+          .status(400)
+          .json({ success: false, message: "newStage đã tồn tại" });
+      }
+      planningProject.plan.timeline[indexTimeline].stage = newStage;
+    }
+
+    if (note) {
+      planningProject.plan.timeline[indexTimeline].note = note;
+    }
+    if (deadline) {
+      planningProject.plan.timeline[indexTimeline].deadline = deadline;
+    }
     await planningProject.save();
 
     res.status(200).json({
       success: true,
       message: "Cập nhật kế hoạch cho project thành công",
-      plan: planningProject.plan,
+      topic: planningProject.plan.topic,
+      target: planningProject.plan.target,
+      timeline: planningProject.plan.timeline,
     });
   } catch (error) {
     console.log(error);

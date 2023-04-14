@@ -16,6 +16,7 @@ const ProjectSchema = new Schema(
       target: { type: String },
       timeline: [
         {
+          _id: { type: false },
           stage: { type: String },
           note: { type: String },
           deadline: { type: String },

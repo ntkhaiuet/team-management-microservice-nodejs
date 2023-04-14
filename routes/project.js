@@ -500,30 +500,24 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
 /**
  * @swagger
  * /api/project/list:
- *  get:
+ *  post:
  *    summary: Lấy list project của người dùng
  *    tags: [Projects]
  *    security:
  *      - bearerAuth: []
- *    parameters:
- *      - in: query
- *        name: name
- *        schema:
- *          type: string
- *        required: false
- *        description: name của project
- *      - in: query
- *        name: role
- *        schema:
- *          type: string
- *        required: false
- *        description: role của user tham gia project
- *      - in: query
- *        name: status
- *        schema:
- *          type: string
- *        required: false
- *        description: status của project
+ *    description: Lấy list project của người dùng
+ *    requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              name:
+ *                default: MyProject
+ *              role:
+ *                default: Leader
+ *              status:
+ *                default: Processing
  *    responses:
  *      200:
  *        description: Lấy ra danh sách thành công
@@ -584,13 +578,11 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *                message:
  *                  default: Lỗi hệ thống
  */
-// @route GET api/project/list
+// @route POST api/project/list
 // @desc Lấy list project của người dùng
 // @access Private
-router.get("/list", verifyToken, async function (req, res) {
-  const name = req.query.name;
-  const role = req.query.role;
-  const status = req.query.status;
+router.post("/list", verifyToken, async function (req, res) {
+  const { name, role, status } = req.body;
 
   try {
     // Kiểm tra người dùng tồn tại và lấy các project của người dùng

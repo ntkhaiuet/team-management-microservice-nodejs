@@ -495,25 +495,22 @@ router.put("/", verifyToken, async (req, res) => {
 /**
  * @swagger
  * /api/user/invitations/list:
- *  get:
+ *  post:
  *    summary: Nhận thông tin về các lời mời vào project người dùng hiện tại (Các lời mời có status là Waiting)
  *    tags: [Users]
  *    security:
  *      - bearerAuth: []
- *    parameters:
- *      - in: query
- *        name: project_name
- *        schema:
- *          type: string
- *        required: false
- *        description: name của project
- *      - in: query
- *        name: role
- *        schema:
- *          type: string
- *        required: false
- *        description: role của user được mời tham gia project
  *    description: Nhận thông tin về các lời mời vào project người dùng hiện tại (Các lời mời có status là Waiting)
+ *    requestBody:
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              project_name:
+ *                default: MyProject
+ *              role:
+ *                default: Leader
  *    responses:
  *      200:
  *        description: Thành công
@@ -560,12 +557,11 @@ router.put("/", verifyToken, async (req, res) => {
  *                message:
  *                  default: Lỗi hệ thống
  */
-// @route GET api/user/invitations/list
+// @route POST api/user/invitations/list
 // @desc Nhận thông tin về các lời mời vào project người dùng hiện tại (Các lời mời có status là Waiting)
-// @access Public
-router.get("/invitations/list", verifyToken, async (req, res) => {
-  const project_name = req.query.project_name;
-  const role = req.query.role;
+// @access Private
+router.post("/invitations/list", verifyToken, async (req, res) => {
+  const { project_name, role } = req.body;
 
   try {
     const user = await User.findById(req.userId);
