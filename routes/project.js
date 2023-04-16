@@ -389,12 +389,22 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
   }
 
   try {
-    // Kiểm tra name project là duy nhất với mỗi user
-    const checkNameProject = await Project.findOne({ name: name });
-    if (checkNameProject) {
+    // Kiểm tra project tồn tại
+    const project = await Project.findById(projectId);
+    if (!project) {
       return res
         .status(400)
-        .json({ success: false, message: "Tên project đã tồn tại" });
+        .json({ success: false, message: "ProjectId không tồn tại" });
+    }
+
+    // Kiểm tra name project là duy nhất với mỗi user
+    if (project.name !== name) {
+      const checkNameProject = await Project.findOne({ name: name });
+      if (checkNameProject) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Tên project đã tồn tại" });
+      }
     }
 
     // Kiểm tra user và teammate tồn tại
@@ -777,7 +787,12 @@ router.get("/:projectId", verifyToken, async function (req, res) {
 
     // Gộp 2 mảng không trùng lặp
     const list = listUser.concat(listInvite);
-    var listUnique = list.filter((item, index) => list.indexOf(item) === index);
+    const listUnique = list.reduce((accumulator, current) => {
+      if (!accumulator.find((element) => element.email === current.email)) {
+        accumulator.push(current);
+      }
+      return accumulator;
+    }, []);
 
     // Tìm user trong mảng listUnique
     const index = listUnique.findIndex(

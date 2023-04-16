@@ -577,19 +577,28 @@ router.post("/invitations/list", verifyToken, async (req, res) => {
     }).populate({ path: "project", select: "name" });
 
     // Lấy ra projectId, project_name và role của mỗi project người dùng được mời cho vào mảng data
-    let data = userProjectInvite.map((projectinvite) => {
-      let roleUser;
-      projectinvite.users.forEach((element) => {
-        if (element.email === user.email && element.status === "Waiting") {
-          roleUser = element.role;
-        }
-      });
-      return {
-        project_id: projectinvite.project._id,
-        project_name: projectinvite.project.name,
-        role: roleUser,
-      };
-    });
+    let data = userProjectInvite
+      .map((projectinvite) => {
+        let roleUser;
+        projectinvite.users.forEach((element) => {
+          if (element.email === user.email && element.status === "Waiting") {
+            roleUser = element.role;
+            return {
+              project_id: projectinvite.project._id,
+              project_name: projectinvite.project.name,
+              role: roleUser,
+            };
+          }
+        });
+        return null;
+      })
+      .filter((item) => item !== null);
+
+    if (data.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Chưa có lời mời nào vào project" });
+    }
 
     // Lọc dựa trên project_name
     if (project_name) {
@@ -686,6 +695,12 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
   const { accept } = req.body;
   const projectId = req.params.projectId;
 
+  if (!accept) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Đã từ chối lời mời" });
+  }
+
   try {
     // Lấy thông tin người dùng
     const user = await User.findById(req.userId);
@@ -714,69 +729,66 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
         .json({ success: false, message: "Không tìm thấy lời mời" });
     }
 
-    if (accept) {
-      let userInvite = projectInvite.users.find((u) => u.email === user.email);
+    let userInvite = projectInvite.users.find((u) => u.email === user.email);
 
-      // Thay role Leader cũ thành Member
-      if (userInvite.role === "Leader") {
-        // Lấy id của Leader cũ
-        const oldLeader = await User.findOne({
-          "projects.project": projectId,
-          "projects.role": "Leader",
-        });
+    // Thay role Leader cũ thành Member
+    if (userInvite.role === "Leader") {
+      // Lấy id của Leader cũ
+      const oldLeader = await User.findOne({
+        "projects.project": projectId,
+        "projects.role": "Leader",
+      });
 
-        const oldLeaderEmail = oldLeader.email;
-        const oldLeaderId = oldLeader._id;
+      const oldLeaderEmail = oldLeader.email;
+      const oldLeaderId = oldLeader._id;
 
-        // Thay role trong project
-        const updatedProject = await Project.findOneAndUpdate(
-          { _id: projectId, "users.email": oldLeaderEmail },
-          { $set: { "users.$.role": "Member" } },
-          { new: true }
-        );
-
-        if (!updatedProject) {
-          return res
-            .status(400)
-            .json({ success: false, message: "Không tìm thấy project" });
-        }
-
-        // Thay role trong user
-        const updatedUser = await User.findOneAndUpdate(
-          { _id: oldLeaderId, "projects.project": projectId },
-          { $set: { "projects.$.role": "Member" } },
-          { new: true }
-        );
-
-        if (!updatedUser) {
-          return res
-            .status(400)
-            .json({ success: false, message: "Không tìm thấy user" });
-        }
+      // Thay role trong project
+      const updatedProject = await Project.findOneAndUpdate(
+        { _id: projectId, "users.email": oldLeaderEmail },
+        { $set: { "users.$.role": "Member" } },
+        { new: true }
+      );
+      if (!updatedProject) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Không tìm thấy project" });
       }
 
-      // thêm 1 project trong user
-      user.projects.push({ project: projectId, role: userInvite.role });
-
-      // Thêm user vào trường users trong project
-      await Project.updateOne(
-        { _id: projectId },
-        {
-          $push: {
-            users: { email: user.email, role: userInvite.role },
-          },
-        }
+      // Thay role trong user
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: oldLeaderId, "projects.project": projectId },
+        { $set: { "projects.$.role": "Member" } },
+        { new: true }
       );
+      if (!updatedUser) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Không tìm thấy user" });
+      }
     }
+
+    // thêm 1 project trong user
+    user.projects.push({ project: projectId, role: userInvite.role });
+
+    // Thêm user vào trường users trong project
+    await Project.updateOne(
+      { _id: projectId },
+      {
+        $push: {
+          users: { email: user.email, role: userInvite.role },
+        },
+      }
+    );
+
     // Cập nhật trạng thái user trong projectinvites
     await ProjectInvite.updateOne(
       { project: projectId, "users.email": user.email },
       { $set: { "users.$.status": "Joined" } }
     );
 
-    await Promise.all([projectInvite.save(), project.save(), user.save()]);
+    await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Xác nhận phản hồi lời mời thành công",
       project_id: projectId,
