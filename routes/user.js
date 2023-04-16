@@ -579,17 +579,17 @@ router.post("/invitations/list", verifyToken, async (req, res) => {
     // Lấy ra projectId, project_name và role của mỗi project người dùng được mời cho vào mảng data
     let data = userProjectInvite
       .map((projectinvite) => {
-        let roleUser;
-        projectinvite.users.forEach((element) => {
-          if (element.email === user.email && element.status === "Waiting") {
-            roleUser = element.role;
-            return {
-              project_id: projectinvite.project._id,
-              project_name: projectinvite.project.name,
-              role: roleUser,
-            };
-          }
-        });
+        let userWaiting = projectinvite.users.find(
+          (element) =>
+            element.email === user.email && element.status === "Waiting"
+        );
+        if (userWaiting) {
+          return {
+            project_id: projectinvite.project._id,
+            project_name: projectinvite.project.name,
+            role: userWaiting.role,
+          };
+        }
         return null;
       })
       .filter((item) => item !== null);
@@ -788,7 +788,7 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
 
     await user.save();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: "Xác nhận phản hồi lời mời thành công",
       project_id: projectId,
