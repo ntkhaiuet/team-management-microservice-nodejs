@@ -935,6 +935,7 @@ router.get("/projects/count", verifyToken, async (req, res) => {
 
     const userProjectInviteCount = await ProjectInvite.countDocuments({
       "users.email": user.email,
+      "users.status": "Waiting"
     });
 
     const userProjectProcessingCount = await Project.countDocuments({
