@@ -3,16 +3,18 @@ const Schema = mongoose.Schema;
 
 const formattedDate = require("../middleware/formatDate");
 
-const CommentSchema = new Schema(
-  {
-    content: { type: String, required: true },
-    author: { type: String, required: true },
-    createdAt: { type: String, default: formattedDate },
-  },
-  {
-    versionKey: false,
-  }
-);
+// const CommentSchema = new Schema(
+//   {
+//     content: { type: String, required: true },
+//     author: { type: String, required: true },
+//     createdAt: { type: String, default: formattedDate },
+//   },
+//   {
+//     versionKey: false,
+//   }
+// );
+
+// comments: [CommentSchema],
 
 const TaskSchema = new Schema(
   {
@@ -26,10 +28,10 @@ const TaskSchema = new Schema(
     estimate: { type: String, required: true },
     spend: { type: String },
     status: { type: String, enum: ["Todo", "Doing", "Review", "Done"] },
-    comments: [CommentSchema],
     tags: [{ type: String }],
     updates: [
       {
+        _id: { type: false },
         timestamp: { type: String, default: formattedDate },
         content: { type: String },
       },
