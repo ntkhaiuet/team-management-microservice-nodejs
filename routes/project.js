@@ -5,6 +5,7 @@ const verifyToken = require("../middleware/auth");
 const User = require("../models/User");
 const Project = require("../models/Project");
 const ProjectInvite = require("../models/ProjectInvite");
+const Task = require("../models/Task");
 
 /**
  * @swagger
@@ -1050,6 +1051,182 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Đã gửi lời mời cho thành viên vào dự án",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/project/{id}/task/list:
+ *  get:
+ *    summary: Lấy list task của project
+ *    tags: [Projects]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Lấy list task của project
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: ID của project
+ *    responses:
+ *      200:
+ *        description: Lấy ra danh sách thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  type: boolean
+ *                  default: true
+ *                data:
+ *                  type: object
+ *                  properties:
+ *                    todo:
+ *                      type: array
+ *                      items:
+ *                        type: object
+ *                        properties:
+ *                          _id:
+ *                            type: string
+ *                            default: 64454bd6298819c64c3d1e3a
+ *                          projectId:
+ *                            type: string
+ *                            default: 643416cd4a60456d281a5192
+ *                          title:
+ *                            type: string
+ *                            default: Task1
+ *                          description:
+ *                            type: string
+ *                            default: Mô tả của Task1
+ *                          creator:
+ *                            type: string
+ *                            default: ntkhaiuet@uet.com
+ *                          assign:
+ *                            type: string
+ *                            default: ntkhaiuet@uet.com
+ *                          duedate:
+ *                            type: string
+ *                            default: 23/04/2023
+ *                          estimate:
+ *                            type: string
+ *                            default: 4 Hours
+ *                          status:
+ *                            type: string
+ *                            default: Doing
+ *                          tags:
+ *                            type: array
+ *                            items:
+ *                              type: string
+ *                              default: "#Tags1"
+ *                          createdAt:
+ *                            type: string
+ *                            default: 08:14:05 23/04/2023
+ *                          updates:
+ *                            type: array
+ *                            items:
+ *                              type: object
+ *                              properties:
+ *                                timestamp:
+ *                                  type: string
+ *                                  default: 08:14:05 23/04/2023
+ *                                content:
+ *                                  type: string
+ *                                  default: "Title: Task1; Description: Mô tả của Task1; Assign: ntkhaiuet; Due Date: 23/04/2023; Estimate: 4 Hours; Spend: 5 Hours; Status: Doing; Tags: #Tags1,#Tags2; Comment: Đã làm được 50% task"
+ *                          spend:
+ *                            type: string
+ *                            default: 5 Hours
+ *                    doing:
+ *                      type: array
+ *                      default: []
+ *                    done:
+ *                      type: array
+ *                      default: []
+ *                    review:
+ *                      type: array
+ *                      default: []
+ *                message:
+ *                  type: string
+ *                  default: Danh sách task đã được nhóm và sắp xếp
+ *      400:
+ *        description: Không tìm thấy người dùng
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Không tìm thấy người dùng
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Lỗi hệ thống
+ */
+// @route GET api/project/:id/task/list
+// @access Private
+router.get("/:id/task/list", verifyToken, async function (req, res) {
+  try {
+    // Kiểm tra người dùng tồn tại và lấy các project của người dùng
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Không tìm thấy người dùng" });
+    }
+    const projectId = req.params.id;
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(400).json({
+        success: false,
+        message: "Không tìm thấy project",
+      });
+    }
+    const listTask = await Task.find({ projectId: projectId }).sort({ created_at: 1 }); // Sắp xếp theo created_at tăng dần
+    const todo = [];
+    const doing = [];
+    const done = [];
+    const review = [];
+
+    // Phân loại các task vào các mảng tương ứng dựa trên trạng thái
+    listTask.forEach(task => {
+      if (task.status === "Todo") {
+        todo.push(task);
+      } else if (task.status === "Doing") {
+        doing.push(task);
+      } else if (task.status === "Done") {
+        done.push(task);
+      } else if (task.status === "Review") {
+        review.push(task);
+      }
+    });
+
+    // Trả về dữ liệu theo định dạng yêu cầu
+    const result = {
+      todo: todo,
+      doing: doing,
+      done: done,
+      review: review
+    };
+
+    res.status(200).json({
+      success: true,
+      data: result,
+      message: "Danh sách task đã được nhóm và sắp xếp",
     });
   } catch (error) {
     console.log(error);
