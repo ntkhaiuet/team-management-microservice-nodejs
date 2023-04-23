@@ -33,11 +33,11 @@ const Task = require("../models/Task");
  *              title:
  *                default: Task đầu tiên
  *              project:
- *                default: MyProject
+ *                default: 64340d4cf69cad6d56eb26ce
  *              description:
  *                default: Mô tả task
  *              assign:
- *                default: ntkhaiuet
+ *                default: ntkhaiuet@gmail.com
  *              duedate:
  *                default: 30/04/2023
  *              estimate:
@@ -59,10 +59,10 @@ const Task = require("../models/Task");
  *                newTask:
  *                  default: {
  *                    "title": "Task 3",
- *                    "project": "MyProject",
+ *                    "project": "64340d4cf69cad6d56eb26ce",
  *                    "description": "Mô tả task",
- *                    "creator": "ntkhaiuet",
- *                    "assign": "sheissocute",
+ *                    "creator": "ntkhaiuet@gmail.com",
+ *                    "assign": "sheissocute@gmail.com",
  *                    "duedate": "30/04/2023",
  *                    "estimate": "4 Hours",
  *                    "status": "Todo",
@@ -73,7 +73,7 @@ const Task = require("../models/Task");
  *                    "createdAt": "23:11:29 20/04/2023"
  *                  }
  *      400:
- *        description: Vui lòng nhập title, project, assign, duedate và estimate/Project không tồn tại/User không tồn tại/Title đã tồn tại/Assign không tồn tại
+ *        description: Vui lòng nhập title, project, assign, duedate và estimate/ProjectId không đúng/User không tồn tại hoặc không thuộc project/Title đã tồn tại/Assign không tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -82,7 +82,7 @@ const Task = require("../models/Task");
  *                success:
  *                  default: false
  *                message:
- *                  default: Vui lòng nhập title, project, assign, duedate và estimate/Project không tồn tại/User không tồn tại/Title đã tồn tại/Assign không tồn tại
+ *                  default: Vui lòng nhập title, project, assign, duedate và estimate/ProjectId không đúng/User không tồn tại hoặc không thuộc project/Title đã tồn tại/Assign không tồn tại
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -113,24 +113,25 @@ router.post("/create", verifyToken, async (req, res) => {
   try {
     // Sử dụng Promise.all để thực hiện các tác vụ kiểm tra đồng thời
     const [checkProject, user, checkTitleTask, assignUser] = await Promise.all([
-      Project.findOne({ name: project }),
-      User.findById(req.userId),
+      Project.findById(project),
+      User.findOne({ _id: req.userId, "projects.project": project }),
       Task.findOne({ title: title }),
-      User.findOne({ full_name: assign }),
+      User.findOne({ email: assign }),
     ]);
 
     // Kiểm tra project tồn tại
     if (!checkProject) {
       return res
         .status(400)
-        .json({ success: false, message: "Project không tồn tại" });
+        .json({ success: false, message: "ProjectId không đúng" });
     }
 
     // Kiểm tra user tồn tại
     if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User không tồn tại" });
+      return res.status(400).json({
+        success: false,
+        message: "User không tồn tại hoặc không thuộc project",
+      });
     }
 
     // Kiểm tra title tồn tại
@@ -149,11 +150,11 @@ router.post("/create", verifyToken, async (req, res) => {
 
     // Tạo task mới
     const newTask = new Task({
-      projectId: checkProject._id,
+      projectId: project,
       title,
       project,
       description,
-      creator: user.full_name,
+      creator: user.email,
       assign,
       duedate,
       estimate,
@@ -168,7 +169,7 @@ router.post("/create", verifyToken, async (req, res) => {
       message: "Tạo task mới thành công",
       newTask: {
         title: newTask.title,
-        project: newTask.project,
+        project: newTask.projectId,
         description: newTask.description,
         creator: newTask.creator,
         assign: newTask.assign,
@@ -213,7 +214,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *              description:
  *                default: Mô tả của Task1
  *              assign:
- *                default: ntkhaiuet
+ *                default: ntkhaiuet@gmail.com
  *              duedate:
  *                default: 23/04/2023
  *              estimate:
@@ -245,8 +246,8 @@ router.post("/create", verifyToken, async (req, res) => {
  *                    "title": "Task1",
  *                    "project": "MyProject",
  *                    "description": "Mô tả của Task1",
- *                    "creator": "ntkhaiuet",
- *                    "assign": "ntkhaiuet",
+ *                    "creator": "ntkhaiuet@gmail.com",
+ *                    "assign": "ntkhaiuet@gmail.com",
  *                    "duedate": "23/04/2023",
  *                    "estimate": "4 Hours",
  *                    "status": "Doing",
@@ -258,13 +259,13 @@ router.post("/create", verifyToken, async (req, res) => {
  *                    "updates": [
  *                      {
  *                        "timestamp": "14:58:40 23/04/2023",
- *                        "content": "Title: Task1; Description: Mô tả của Task1; Assign: ntkhaiuet; Due Date: 23/04/2023; Estimate: 4 Hours; Spend: 5 Hours; Status: Doing; Tags: #Tags1,#Tags2; Comment: Đã làm được 50% task"
+ *                        "content": "Title: Task1; Description: Mô tả của Task1; Assign: ntkhaiuet@gmail.com; Due Date: 23/04/2023; Estimate: 4 Hours; Spend: 5 Hours; Status: Doing; Tags: #Tags1,#Tags2; Comment: Đã làm được 50% task"
  *                      }
  *                    ],
  *                    "spend": "5 Hours"
  *                  }
  *      400:
- *        description: Title đã tồn tại/Assign không tồn tại/User không tồn tại/Task không tồn tại
+ *        description: Title đã tồn tại/Assign không tồn tại/Id của task không đúng/User không tồn tại hoặc không thuộc project
  *        content:
  *          application/json:
  *            schema:
@@ -273,7 +274,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Title đã tồn tại/Assign không tồn tại/User không tồn tại/Task không tồn tại
+ *                  default: Title đã tồn tại/Assign không tồn tại/Id của task không đúng/User không tồn tại hoặc không thuộc project
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -313,7 +314,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     }
 
     if (req.body.assign) {
-      const assignUser = await User.findOne({ full_name: req.body.assign });
+      const assignUser = await User.findOne({ email: req.body.assign });
       if (!assignUser) {
         return res.status(400).json({
           success: false,
@@ -360,27 +361,31 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       };
     }
 
-    const user = await User.findById(req.userId);
-    if (!user) {
+    let task = await Task.findById(id);
+    if (!task) {
       return res
         .status(400)
-        .json({ success: false, message: "User không tồn tại" });
+        .json({ success: false, message: "Id của task không đúng" });
     }
 
-    const updatedTask = await Task.findByIdAndUpdate(id, updateFields, {
-      new: true,
+    const user = await User.findOne({
+      _id: req.userId,
+      "projects.project": task.projectId,
     });
-
-    if (!updatedTask) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Task không tồn tại" });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User không tồn tại hoặc không thuộc project",
+      });
     }
+
+    task = Object.assign(task, updateFields);
+    await task.save();
 
     res.json({
       success: true,
       message: "Task đã được cập nhật",
-      task: updatedTask,
+      task: task,
     });
   } catch (error) {
     console.log(error);

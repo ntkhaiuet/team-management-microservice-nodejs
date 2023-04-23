@@ -20,7 +20,6 @@ const TaskSchema = new Schema(
   {
     projectId: { type: Schema.Types.ObjectId, ref: "Project" },
     title: { type: String, required: true },
-    project: { type: String, required: true },
     description: { type: String },
     creator: { type: String, required: true },
     assign: { type: String, required: true },
