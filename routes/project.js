@@ -1154,6 +1154,8 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
 // @route GET api/project/:id/task/list
 // @access Private
 router.get("/:id/task/list", verifyToken, async function (req, res) {
+  const projectId = req.params.id;
+
   try {
     // Kiểm tra người dùng tồn tại và lấy các project của người dùng
     const user = await User.findOne({
@@ -1167,7 +1169,6 @@ router.get("/:id/task/list", verifyToken, async function (req, res) {
           "Không tìm thấy người dùng hoặc người dùng không thuộc project",
       });
     }
-    const projectId = req.params.id;
     const project = await Project.findById(projectId);
     if (!project) {
       return res.status(400).json({
