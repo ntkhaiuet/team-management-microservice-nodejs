@@ -4,7 +4,6 @@ const verifyToken = require("../middleware/auth");
 
 const User = require("../models/User");
 const Project = require("../models/Project");
-const ProjectInvite = require("../models/ProjectInvite");
 const Task = require("../models/Task");
 
 /**
@@ -58,8 +57,9 @@ const Task = require("../models/Task");
  *                  default: Tạo task mới thành công
  *                newTask:
  *                  default: {
+ *                    "_id": "6444e934ade502f84253504e",
  *                    "title": "Task 3",
- *                    "project": "64340d4cf69cad6d56eb26ce",
+ *                    "projectId": "64340d4cf69cad6d56eb26ce",
  *                    "description": "Mô tả task",
  *                    "creator": "ntkhaiuet@gmail.com",
  *                    "assign": "sheissocute@gmail.com",
@@ -115,7 +115,7 @@ router.post("/create", verifyToken, async (req, res) => {
     const [checkProject, user, checkTitleTask, assignUser] = await Promise.all([
       Project.findById(project),
       User.findOne({ _id: req.userId, "projects.project": project }),
-      Task.findOne({ title: title }),
+      Task.findOne({ title: title, projectId: project }),
       User.findOne({ email: assign }),
     ]);
 
@@ -168,8 +168,9 @@ router.post("/create", verifyToken, async (req, res) => {
       success: true,
       message: "Tạo task mới thành công",
       newTask: {
+        _id: newTask._id,
         title: newTask.title,
-        project: newTask.projectId,
+        projectId: newTask.projectId,
         description: newTask.description,
         creator: newTask.creator,
         assign: newTask.assign,
@@ -179,6 +180,113 @@ router.post("/create", verifyToken, async (req, res) => {
         tags: newTask.tags,
         createdAt: newTask.createdAt,
       },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/task/read/{id}:
+ *  get:
+ *    summary: Nhận thông tin của 1 task
+ *    tags: [Tasks]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Nhận thông tin của 1 task
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: ID của task
+ *    responses:
+ *      200:
+ *        description: Nhận thông tin của task thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Nhận thông tin của task thành công
+ *                task:
+ *                  default: {
+ *                    "_id": "64461dd557e850dcdac9bc33",
+ *                    "projectId": "64340fa55abd3c60a38e3dd9",
+ *                    "title": "Task1",
+ *                    "description": "Mô tả task",
+ *                    "creator": "ntkhaiuet@gmail.com",
+ *                    "assign": "ntkhaiuet@gmail.com",
+ *                    "duedate": "30/04/2023",
+ *                    "estimate": "4 Hours",
+ *                    "status": "Todo",
+ *                    "tags": [
+ *                      "#Tags1",
+ *                      "#Tags2"
+ *                    ],
+ *                    "createdAt": "13:10:55 24/04/2023",
+ *                    "updates": []
+ *                  }
+ *      400:
+ *        description: Id của task không đúng/User không tồn tại hoặc không thuộc project
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Id của task không đúng/User không tồn tại hoặc không thuộc project
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Lỗi hệ thống
+ */
+// @route GET api/task/read/:id
+// @desc Nhận thông tin của 1 task
+// @access Private
+router.get("/read/:id", verifyToken, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    // Kiểm tra task tồn tại
+    const task = await Task.findById(id);
+    if (!task) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Id của task không đúng" });
+    }
+
+    // Kiểm tra user tồn tại và có thuộc project chứa task không
+    const user = await User.findOne({
+      _id: req.userId,
+      "projects.project": task.projectId,
+    });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User không tồn tại hoặc không thuộc project",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Nhận thông tin của task thành công",
+      task: task,
     });
   } catch (error) {
     console.log(error);

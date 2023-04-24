@@ -1083,79 +1083,53 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
  *              type: object
  *              properties:
  *                success:
- *                  type: boolean
  *                  default: true
- *                data:
- *                  type: object
- *                  properties:
- *                    todo:
- *                      type: array
- *                      items:
- *                        type: object
- *                        properties:
- *                          _id:
- *                            type: string
- *                            default: 64454bd6298819c64c3d1e3a
- *                          projectId:
- *                            type: string
- *                            default: 643416cd4a60456d281a5192
- *                          title:
- *                            type: string
- *                            default: Task1
- *                          description:
- *                            type: string
- *                            default: Mô tả của Task1
- *                          creator:
- *                            type: string
- *                            default: ntkhaiuet@uet.com
- *                          assign:
- *                            type: string
- *                            default: ntkhaiuet@uet.com
- *                          duedate:
- *                            type: string
- *                            default: 23/04/2023
- *                          estimate:
- *                            type: string
- *                            default: 4 Hours
- *                          status:
- *                            type: string
- *                            default: Doing
- *                          tags:
- *                            type: array
- *                            items:
- *                              type: string
- *                              default: "#Tags1"
- *                          createdAt:
- *                            type: string
- *                            default: 08:14:05 23/04/2023
- *                          updates:
- *                            type: array
- *                            items:
- *                              type: object
- *                              properties:
- *                                timestamp:
- *                                  type: string
- *                                  default: 08:14:05 23/04/2023
- *                                content:
- *                                  type: string
- *                                  default: "Title: Task1; Description: Mô tả của Task1; Assign: ntkhaiuet; Due Date: 23/04/2023; Estimate: 4 Hours; Spend: 5 Hours; Status: Doing; Tags: #Tags1,#Tags2; Comment: Đã làm được 50% task"
- *                          spend:
- *                            type: string
- *                            default: 5 Hours
- *                    doing:
- *                      type: array
- *                      default: []
- *                    done:
- *                      type: array
- *                      default: []
- *                    review:
- *                      type: array
- *                      default: []
  *                message:
- *                  type: string
  *                  default: Danh sách task đã được nhóm và sắp xếp
+ *                data:
+ *                  default: {
+ *                    "todo": [
+ *                      {
+ *                        "_id": "644557cbcd05fe990d904ffe",
+ *                        "projectId": "64340d4cf69cad6d56eb26ce",
+ *                        "title": "Task đầu tiên",
+ *                        "description": "Mô tả task",
+ *                        "creator": "ntkhaiuet@gmail.com",
+ *                        "assign": "ntkhaiuet@gmail.com",
+ *                        "duedate": "30/04/2023",
+ *                        "estimate": "4 Hours",
+ *                        "status": "Todo",
+ *                        "tags": [
+ *                          "#Tags1",
+ *                          "#Tags2"
+ *                        ],
+ *                        "createdAt": "23:06:58 23/04/2023",
+ *                        "updates": []
+ *                      },
+ *                      {
+ *                        "_id": "64455f793105cb6f4550435a",
+ *                        "projectId": "64340d4cf69cad6d56eb26ce",
+ *                        "title": "Task đầu tiên q1",
+ *                        "description": "Mô tả task",
+ *                        "creator": "ngoc080701@gmail.com",
+ *                        "assign": "ngoc080701@gmail.com",
+ *                        "duedate": "30/04/2023",
+ *                        "estimate": "4 Hours",
+ *                        "status": "Todo",
+ *                        "tags": [
+ *                          "#Tags1",
+ *                          "#Tags2"
+ *                        ],
+ *                        "createdAt": "23:39:12 23/04/2023",
+ *                        "updates": []
+ *                      }
+ *                    ],
+ *                    "doing": [],
+ *                    "done": [],
+ *                    "review": []
+ *                  }
  *      400:
- *        description: Không tìm thấy người dùng
+ *        description: Không tìm thấy người dùng hoặc người dùng không thuộc project/Không tìm thấy project
  *        content:
  *          application/json:
  *            schema:
@@ -1164,7 +1138,7 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Không tìm thấy người dùng
+ *                  default: Không tìm thấy người dùng hoặc người dùng không thuộc project/Không tìm thấy project
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -1182,11 +1156,16 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
 router.get("/:id/task/list", verifyToken, async function (req, res) {
   try {
     // Kiểm tra người dùng tồn tại và lấy các project của người dùng
-    const user = await User.findById(req.userId);
+    const user = await User.findOne({
+      _id: req.userId,
+      "projects.project": projectId,
+    });
     if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Không tìm thấy người dùng" });
+      return res.status(400).json({
+        success: false,
+        message:
+          "Không tìm thấy người dùng hoặc người dùng không thuộc project",
+      });
     }
     const projectId = req.params.id;
     const project = await Project.findById(projectId);
@@ -1196,14 +1175,16 @@ router.get("/:id/task/list", verifyToken, async function (req, res) {
         message: "Không tìm thấy project",
       });
     }
-    const listTask = await Task.find({ projectId: projectId }).sort({ created_at: 1 }); // Sắp xếp theo created_at tăng dần
+    const listTask = await Task.find({ projectId: projectId }).sort({
+      createdAt: 1,
+    }); // Sắp xếp theo createdAt tăng dần
     const todo = [];
     const doing = [];
     const done = [];
     const review = [];
 
     // Phân loại các task vào các mảng tương ứng dựa trên trạng thái
-    listTask.forEach(task => {
+    listTask.forEach((task) => {
       if (task.status === "Todo") {
         todo.push(task);
       } else if (task.status === "Doing") {
@@ -1220,13 +1201,13 @@ router.get("/:id/task/list", verifyToken, async function (req, res) {
       todo: todo,
       doing: doing,
       done: done,
-      review: review
+      review: review,
     };
 
     res.status(200).json({
       success: true,
-      data: result,
       message: "Danh sách task đã được nhóm và sắp xếp",
+      data: result,
     });
   } catch (error) {
     console.log(error);
