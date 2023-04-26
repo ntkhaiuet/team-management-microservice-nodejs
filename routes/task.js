@@ -60,8 +60,9 @@ const Task = require("../models/Task");
  *                newTask:
  *                  default: {
  *                    "_id": "6444e934ade502f84253504e",
- *                    "title": "Task 3",
  *                    "projectId": "64340d4cf69cad6d56eb26ce",
+ *                    "stage": "Week1",
+ *                    "title": "Task 3",
  *                    "description": "Mô tả task",
  *                    "creator": "ntkhaiuet@gmail.com",
  *                    "assign": "sheissocute@gmail.com",
@@ -72,7 +73,8 @@ const Task = require("../models/Task");
  *                      "#Tags1",
  *                      "#Tags2"
  *                    ],
- *                    "createdAt": "23:11:29 20/04/2023"
+ *                    "createdAt": "23:11:29 20/04/2023",
+ *                    "order": 0
  *                  }
  *      400:
  *        description: Vui lòng nhập stage, title, project, assign, duedate và estimate/ProjectId không đúng/Stage không tồn tại/User không tồn tại hoặc không thuộc project/Title đã tồn tại/Assign không tồn tại
@@ -199,6 +201,7 @@ router.post("/create", verifyToken, async (req, res) => {
         status: newTask.status,
         tags: newTask.tags,
         createdAt: newTask.createdAt,
+        order: newTask.order,
       },
     });
   } catch (error) {
@@ -238,6 +241,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                task:
  *                  default: {
  *                    "_id": "64461dd557e850dcdac9bc33",
+ *                    "stage": "Week1",
  *                    "projectId": "64340fa55abd3c60a38e3dd9",
  *                    "title": "Task1",
  *                    "description": "Mô tả task",
@@ -251,7 +255,8 @@ router.post("/create", verifyToken, async (req, res) => {
  *                      "#Tags2"
  *                    ],
  *                    "createdAt": "13:10:55 24/04/2023",
- *                    "updates": []
+ *                    "updates": [],
+ *                    "order": 0,
  *                  }
  *      400:
  *        description: Id của task không đúng/User không tồn tại hoặc không thuộc project

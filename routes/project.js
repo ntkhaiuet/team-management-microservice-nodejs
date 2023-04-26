@@ -1108,6 +1108,7 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
  *                      },
  *                      {
  *                        "_id": "64455f793105cb6f4550435a",
+ *                        "stage": "Week1",
  *                        "projectId": "64340d4cf69cad6d56eb26ce",
  *                        "title": "Task đầu tiên q1",
  *                        "description": "Mô tả task",
@@ -1121,7 +1122,8 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
  *                          "#Tags2"
  *                        ],
  *                        "createdAt": "23:39:12 23/04/2023",
- *                        "updates": []
+ *                        "updates": [],
+ *                        "order": 0
  *                      }
  *                    ],
  *                    "doing": [],

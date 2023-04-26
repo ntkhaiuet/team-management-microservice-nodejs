@@ -37,6 +37,7 @@ const TaskSchema = new Schema(
       },
     ],
     createdAt: { type: String, default: formattedDate },
+    order: { type: Number, default: 0 },
   },
   {
     versionKey: false,
