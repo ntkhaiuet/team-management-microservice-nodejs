@@ -626,4 +626,122 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/task/show/{id}:
+ *  get:
+ *    summary: Xem thông tin của 1 task
+ *    tags: [Tasks]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Xem thông tin của 1 task
+ *    parameters:
+ *      - in: path
+ *        name: id
+ *        schema:
+ *          type: string
+ *        required: true
+ *        description: Id của task
+ *    responses:
+ *      200:
+ *        description: Xóa task thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Lấy thông tin task thành công
+ *                data:
+ *                  default: {
+ *                        "order": 0,
+ *                        "_id": "644557cbcd05fe990d904ffe",
+ *                        "projectId": "64340d4cf69cad6d56eb26ce",
+ *                        "project": "My project",
+ *                        "title": "Task đầu tiên",
+ *                        "description": "Mô tả task",
+ *                        "creator": "ntkhaiuet@gmail.com",
+ *                        "assign": "ntkhaiuet@gmail.com",
+ *                        "duedate": "30/04/2023",
+ *                        "estimate": "4 Hours",
+ *                        "status": "Todo",
+ *                        "tags": [
+ *                          "#Tags1",
+ *                          "#Tags2"
+ *                        ],
+ *                        "createdAt": "23:06:58 23/04/2023",
+ *                        "updates": [],
+ *                        "spend": "5 Hours"
+ *                    }
+ *      400:
+ *        description: Id không tồn tại
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Id không tồn tại
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Lỗi hệ thống
+ */
+// @route GET api/task/show/:id
+// @desc Xem thông tin của 1 task
+// @access Private
+router.get("/show/:id", verifyToken, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const taskInfo = await Task.findById(id);
+    if (!taskInfo) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Id không tồn tại" });
+    }
+
+    const projectId = taskInfo.projectId
+    const user = await User.findOne({
+      _id: req.userId,
+      "projects.project": projectId,
+    });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Không tìm thấy người dùng hoặc người dùng không thuộc project",
+      });
+    }
+
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(400).json({
+        success: false,
+        message: "Không tìm thấy project",
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Lấy thông tin task thành công",
+      data: taskInfo
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
+
 module.exports = router;
