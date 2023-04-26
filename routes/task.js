@@ -362,6 +362,8 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *                default: ["#Tags1", "#Tags2"]
  *              comment:
  *                default: Đã làm được 50% task
+ *              order:
+ *                default: 1
  *    responses:
  *      200:
  *        description: Task đã được cập nhật
@@ -397,7 +399,8 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *                        "content": "Title: Task1; Description: Mô tả của Task1; Assign: ntkhaiuet@gmail.com; Due Date: 23/04/2023; Estimate: 4 Hours; Spend: 5 Hours; Status: Doing; Tags: #Tags1,#Tags2; Comment: Đã làm được 50% task"
  *                      }
  *                    ],
- *                    "spend": "5 Hours"
+ *                    "spend": "5 Hours",
+ *                    "order": 1
  *                  }
  *      400:
  *        description: Title đã tồn tại/Assign không tồn tại/Id của task không đúng/User không tồn tại hoặc không thuộc project
@@ -514,6 +517,10 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     if (req.body.comment) {
       updateFields.comment = req.body.comment;
       updatesContent.push(`Comment: ${req.body.comment}`);
+    }
+
+    if (req.body.order) {
+      updateFields.order = req.body.order;
     }
 
     if (updatesContent.length > 0) {
