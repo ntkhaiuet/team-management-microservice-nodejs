@@ -29,6 +29,8 @@ const Task = require("../models/Task");
  *          schema:
  *            type: object
  *            properties:
+ *              stage:
+ *                default: Week1
  *              title:
  *                default: Task đầu tiên
  *              project:
@@ -73,7 +75,7 @@ const Task = require("../models/Task");
  *                    "createdAt": "23:11:29 20/04/2023"
  *                  }
  *      400:
- *        description: Vui lòng nhập title, project, assign, duedate và estimate/ProjectId không đúng/User không tồn tại hoặc không thuộc project/Title đã tồn tại/Assign không tồn tại
+ *        description: Vui lòng nhập stage, title, project, assign, duedate và estimate/ProjectId không đúng/Stage không tồn tại/User không tồn tại hoặc không thuộc project/Title đã tồn tại/Assign không tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -82,7 +84,7 @@ const Task = require("../models/Task");
  *                success:
  *                  default: false
  *                message:
- *                  default: Vui lòng nhập title, project, assign, duedate và estimate/ProjectId không đúng/User không tồn tại hoặc không thuộc project/Title đã tồn tại/Assign không tồn tại
+ *                  default: Vui lòng nhập stage, title, project, assign, duedate và estimate/ProjectId không đúng/Stage không tồn tại/User không tồn tại hoặc không thuộc project/Title đã tồn tại/Assign không tồn tại
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -99,14 +101,23 @@ const Task = require("../models/Task");
 // @desc Tạo 1 task mới
 // @access Private
 router.post("/create", verifyToken, async (req, res) => {
-  const { title, project, description, assign, duedate, estimate, tags } =
-    req.body;
+  const {
+    stage,
+    title,
+    project,
+    description,
+    assign,
+    duedate,
+    estimate,
+    tags,
+  } = req.body;
 
   // Kiểm tra các trường bắt buộc
-  if (!title || !project || !assign || !duedate || !estimate) {
+  if (!stage || !title || !project || !assign || !duedate || !estimate) {
     return res.status(400).json({
       success: false,
-      message: "Vui lòng nhập title, project, assign, duedate và estimate",
+      message:
+        "Vui lòng nhập stage, title, project, assign, duedate và estimate",
     });
   }
 
@@ -124,6 +135,13 @@ router.post("/create", verifyToken, async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "ProjectId không đúng" });
+    }
+
+    // Kiểm tra stage tồn tại
+    if (!checkProject.plan.timeline.find((item) => item.stage === stage)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Stage không tồn tại" });
     }
 
     // Kiểm tra user tồn tại
@@ -151,6 +169,7 @@ router.post("/create", verifyToken, async (req, res) => {
     // Tạo task mới
     const newTask = new Task({
       projectId: project,
+      stage,
       title,
       project,
       description,
@@ -169,6 +188,7 @@ router.post("/create", verifyToken, async (req, res) => {
       message: "Tạo task mới thành công",
       newTask: {
         _id: newTask._id,
+        stage: newTask.stage,
         title: newTask.title,
         projectId: newTask.projectId,
         description: newTask.description,
@@ -317,6 +337,8 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *          schema:
  *            type: object
  *            properties:
+ *              stage:
+ *                default: Start
  *              title:
  *                default: Task1
  *              description:
@@ -404,6 +426,32 @@ router.put("/update/:id", verifyToken, async (req, res) => {
   const updatesContent = [];
 
   try {
+    let task = await Task.findById(id);
+    if (!task) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Id của task không đúng" });
+    }
+
+    if (req.body.stage) {
+      const existingStage = await Project.findOne({
+        _id: task.projectId,
+      });
+      if (
+        existingStage &&
+        existingStage.plan.timeline.find(
+          (item) => item.stage === req.body.stage && item.stage !== task.stage
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Stage đã tồn tại",
+        });
+      }
+      updateFields.stage = req.body.stage;
+      updatesContent.push(`Stage: ${req.body.stage}`);
+    }
+
     if (req.body.title) {
       const existingTask = await Task.findOne({ title: req.body.title });
       if (existingTask && existingTask.id !== id) {
@@ -467,13 +515,6 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       updateFields.$push = {
         updates: { content: updatesContent.join("; ") },
       };
-    }
-
-    let task = await Task.findById(id);
-    if (!task) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Id của task không đúng" });
     }
 
     const user = await User.findOne({

@@ -19,6 +19,7 @@ const formattedDate = require("../middleware/formatDate");
 const TaskSchema = new Schema(
   {
     projectId: { type: Schema.Types.ObjectId, ref: "Project" },
+    stage: { type: String, required: true },
     title: { type: String, required: true },
     description: { type: String },
     creator: { type: String, required: true },
