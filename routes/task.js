@@ -125,12 +125,14 @@ router.post("/create", verifyToken, async (req, res) => {
 
   try {
     // Sử dụng Promise.all để thực hiện các tác vụ kiểm tra đồng thời
-    const [checkProject, user, checkTitleTask, assignUser] = await Promise.all([
-      Project.findById(project),
-      User.findOne({ _id: req.userId, "projects.project": project }),
-      Task.findOne({ title: title, projectId: project }),
-      User.findOne({ email: assign }),
-    ]);
+    const [task, checkProject, user, checkTitleTask, assignUser] =
+      await Promise.all([
+        Task.find({ projectId: project, status: "Todo" }),
+        Project.findById(project),
+        User.findOne({ _id: req.userId, "projects.project": project }),
+        Task.findOne({ title: title, projectId: project }),
+        User.findOne({ email: assign }),
+      ]);
 
     // Kiểm tra project tồn tại
     if (!checkProject) {
@@ -181,6 +183,7 @@ router.post("/create", verifyToken, async (req, res) => {
       estimate,
       status: "Todo",
       tags,
+      order: task.length + 1,
     });
 
     await newTask.save();
