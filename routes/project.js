@@ -617,10 +617,7 @@ router.post("/list", verifyToken, async function (req, res) {
           name: projectWithUser.project.name,
           description: projectWithUser.project.description,
           status: projectWithUser.project.status,
-          progress:
-            projectWithUser.project.status === "Completed"
-              ? 1
-              : Math.random().toFixed(2),
+          progress: projectWithUser.project.progress,
           user: {
             email: currentUser.email,
             role: currentUser.role,
@@ -693,6 +690,8 @@ router.post("/list", verifyToken, async function (req, res) {
  *                  default: Mô tả
  *                project_status:
  *                  default: Processing
+ *                project_progress:
+ *                  default: 0
  *                project_createdAt:
  *                  default: 22:03:58 09/04/2023
  *                user:
@@ -832,6 +831,7 @@ router.get("/:projectId", verifyToken, async function (req, res) {
       project_name: project.name,
       project_description: project.description,
       project_status: project.status,
+      project_progress: project.progress,
       project_createdAt: project.createdAt,
       user: userInfo,
       teammate: listUniqueWithDetails,

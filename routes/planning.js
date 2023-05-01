@@ -2,8 +2,22 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 
+const onlyDate = require("../middleware/onlyDate");
+const { dateDiff } = require("../middleware/dateDiff");
+
 const User = require("../models/User");
 const Project = require("../models/Project");
+
+// Tính stage chiếm bao nhiêu % của project
+function percentStageOfProject(timeline) {
+  const totalWeight = timeline.reduce((acc, curr) => {
+    return acc + curr.percentOfProject.weight;
+  }, 0);
+  for (let i = 0; i < timeline.length; i++) {
+    timeline[i].percentOfProject.percent =
+      timeline[i].percentOfProject.weight / totalWeight;
+  }
+}
 
 /**
  * @swagger
@@ -76,7 +90,7 @@ const Project = require("../models/Project");
  *                          ]
  *                      }
  *      400:
- *        description: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền lập kế hoạch cho project
+ *        description: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền lập kế hoạch cho project/Stage đã tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -85,7 +99,7 @@ const Project = require("../models/Project");
  *                success:
  *                  default: false
  *                message:
- *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền lập kế hoạch cho project
+ *                  default: Thiếu trường bắt buộc/ProjectId không đúng hoặc người dùng không có quyền lập kế hoạch cho project/Stage đã tồn tại
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -112,13 +126,6 @@ router.post("/create/:id", verifyToken, async (req, res) => {
       .json({ succes: false, message: "Thiếu trường bắt buộc" });
   }
 
-  // Lưu thông tin của timeline vào biến
-  const timelineData = {
-    stage: stage,
-    note: note,
-    deadline: deadline,
-  };
-
   try {
     // Tìm project có _id là projectId, người dùng hiện tại là Leader của project đó
     const planningProject = await Project.findOne({
@@ -136,21 +143,64 @@ router.post("/create/:id", verifyToken, async (req, res) => {
       });
     }
 
+    // Kiểm tra stage tồn tại
+    const isStageExist = planningProject.plan.timeline.some((item) => {
+      return item.stage === stage;
+    });
+    if (isStageExist) {
+      return res.status(400).json({
+        success: false,
+        message: "Stage đã tồn tại",
+      });
+    }
+
     // Nếu chưa từng tạo plan thì tạo trường plan trong project
-    if (topic && target) {
-      let timeline = planningProject.plan.timeline || [];
-      timeline.push(timelineData);
+    if (topic && target && planningProject.plan.timeline.length === 0) {
+      // Tính khoảng cách giữa ngày tạo kế hoạch và deadline
+      const dateDifferent = dateDiff(onlyDate, deadline);
+
       const plan = {
         topic: topic,
         target: target,
-        timeline: timeline,
+        timeline: {
+          stage: stage,
+          note: note,
+          deadline: deadline,
+          percentOfProject: {
+            weight: dateDifferent,
+            percent: 1,
+          },
+        },
       };
       planningProject.plan = plan;
     }
     // Nếu đã tạo plan trước đó
     else {
-      planningProject.plan.timeline.push(timelineData);
+      const timelineLength = planningProject.plan.timeline.length;
+      const deadlineLastStage =
+        planningProject.plan.timeline[timelineLength - 1].deadline;
+      const dateDifferent = dateDiff(deadlineLastStage, deadline);
+
+      planningProject.plan.timeline.push({
+        stage: stage,
+        note: note,
+        deadline: deadline,
+        percentOfProject: {
+          weight: dateDifferent,
+        },
+      });
+
+      // Tính stage chiếm bao nhiêu % của project
+      percentStageOfProject(planningProject.plan.timeline);
     }
+    // Tính progress của project
+    const projectProgress = planningProject.plan.timeline.reduce(
+      (acc, curr) => {
+        return acc + curr.percentOfProject.percent * curr.progress;
+      },
+      0
+    );
+    planningProject.progress = projectProgress;
     await planningProject.save();
 
     res.status(200).json({
@@ -202,11 +252,13 @@ router.post("/create/:id", verifyToken, async (req, res) => {
  *                              "stage": "Start",
  *                              "note": "Start project",
  *                              "deadline": "01/01/2023",
+ *                              "progress": 1,
  *                            },
  *                            {
  *                              "stage": "Report Week 1",
  *                              "note": "Online",
  *                              "deadline": "08/01/2023",
+ *                              "progress": 0,
  *                            }
  *                          ]
  *                        }
@@ -453,8 +505,30 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       planningProject.plan.timeline[indexTimeline].note = note;
     }
     if (deadline) {
+      let dateDifferent;
+      if (planningProject.plan.timeline.length === 1) {
+        dateDifferent = dateDiff(planningProject.plan.createdAt, deadline);
+      } else {
+        dateDifferent = dateDiff(
+          planningProject.plan.timeline[indexTimeline - 1].deadline,
+          deadline
+        );
+      }
       planningProject.plan.timeline[indexTimeline].deadline = deadline;
+      planningProject.plan.timeline[indexTimeline].percentOfProject.weight =
+        dateDifferent;
+      percentStageOfProject(planningProject.plan.timeline);
+
+      // Tính progress của project
+      const projectProgress = planningProject.plan.timeline.reduce(
+        (acc, curr) => {
+          return acc + curr.percentOfProject.percent * curr.progress;
+        },
+        0
+      );
+      planningProject.progress = projectProgress;
     }
+
     await planningProject.save();
 
     res.status(200).json({
@@ -571,6 +645,19 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
 
     // Xóa timeline có stage là stage được gửi từ client
     planningProject.plan.timeline.splice(indexTimeline, 1);
+
+    // Cập nhật weight và percent của percentOfProject
+    percentStageOfProject(planningProject.plan.timeline);
+
+    // Tính progress của project
+    const projectProgress = planningProject.plan.timeline.reduce(
+      (acc, curr) => {
+        return acc + curr.percentOfProject.percent * curr.progress;
+      },
+      0
+    );
+    planningProject.progress = projectProgress;
+
     await planningProject.save();
 
     res.status(200).json({

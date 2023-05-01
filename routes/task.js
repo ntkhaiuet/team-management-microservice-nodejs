@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 
+const { dateDiff } = require("../middleware/dateDiff");
+
 const User = require("../models/User");
 const Project = require("../models/Project");
 const Task = require("../models/Task");
@@ -74,7 +76,8 @@ const Task = require("../models/Task");
  *                      "#Tags2"
  *                    ],
  *                    "createdAt": "23:11:29 20/04/2023",
- *                    "order": 0
+ *                    "order": 1,
+ *                    "progress": 0
  *                  }
  *      400:
  *        description: Vui lòng nhập stage, title, project, assign, duedate và estimate/ProjectId không đúng/Stage không tồn tại/User không tồn tại hoặc không thuộc project/Title đã tồn tại/Assign không tồn tại
@@ -158,9 +161,10 @@ router.post("/create", verifyToken, async (req, res) => {
 
     // Kiểm tra title tồn tại
     if (checkTitleTask) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Title đã tồn tại" });
+      return res.status(400).json({
+        success: false,
+        message: "Title đã tồn tại",
+      });
     }
 
     // Kiểm tra assign tồn tại
@@ -184,9 +188,55 @@ router.post("/create", verifyToken, async (req, res) => {
       status: "Todo",
       tags,
       order: task.length + 1,
+      percentOfStage: {
+        weight: dateDiff(duedate, checkProject.plan.createdAt),
+        percent: 1,
+      },
+      progress: 0,
     });
 
     await newTask.save();
+    const taskWithStage = await Task.find({
+      projectId: project,
+      stage: stage,
+    });
+
+    // Tính task chiếm bao nhiêu % của stage
+    function percentTaskOfStage(task) {
+      const totalWeight = task.reduce((acc, curr) => {
+        return acc + curr.percentOfStage.weight;
+      }, 0);
+      for (let i = 0; i < task.length; i++) {
+        task[i].percentOfStage.percent =
+          task[i].percentOfStage.weight / totalWeight;
+      }
+    }
+
+    // Cập nhật weight và percent của percentOfStage
+    async function updateTasks(taskArray) {
+      for (let task of taskArray) {
+        await task.save();
+      }
+    }
+    percentTaskOfStage(taskWithStage);
+    await updateTasks(taskWithStage);
+
+    // Tính progress của stage
+    const stageProgress = taskWithStage.reduce((acc, curr) => {
+      return acc + curr.percentOfStage.percent * curr.progress;
+    }, 0);
+    const indexStage = checkProject.plan.timeline.findIndex(
+      (item) => item.stage === stage
+    );
+    checkProject.plan.timeline[indexStage].progress = stageProgress;
+
+    // Tính progress của project
+    const projectProgress = checkProject.plan.timeline.reduce((acc, curr) => {
+      return acc + curr.percentOfProject.percent * curr.progress;
+    }, 0);
+    checkProject.progress = projectProgress;
+
+    await checkProject.save();
 
     res.status(200).json({
       success: true,
@@ -205,6 +255,7 @@ router.post("/create", verifyToken, async (req, res) => {
         tags: newTask.tags,
         createdAt: newTask.createdAt,
         order: newTask.order,
+        progress: newTask.progress,
       },
     });
   } catch (error) {
@@ -259,7 +310,8 @@ router.post("/create", verifyToken, async (req, res) => {
  *                    ],
  *                    "createdAt": "13:10:55 24/04/2023",
  *                    "updates": [],
- *                    "order": 0,
+ *                    "order": 1,
+ *                    "progress": 0
  *                  }
  *      400:
  *        description: Id của task không đúng/User không tồn tại hoặc không thuộc project
@@ -510,6 +562,36 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     if (req.body.status) {
       updateFields.status = req.body.status;
       updatesContent.push(`Status: ${req.body.status}`);
+
+      if (req.body.status === "Done") {
+        task.progress = 1;
+        await task.save();
+
+        // Tính progress của stage
+        const stage = req.body.stage || task.stage;
+        const [taskWithStage, project] = await Promise.all([
+          Task.find({
+            projectId: task.projectId,
+            stage: stage,
+          }),
+          Project.findById(task.projectId),
+        ]);
+        const stageProgress = taskWithStage.reduce((acc, curr) => {
+          return acc + curr.percentOfStage.percent * curr.progress;
+        }, 0);
+        const indexStage = project.plan.timeline.findIndex(
+          (item) => item.stage === stage
+        );
+        project.plan.timeline[indexStage].progress = stageProgress;
+
+        // Tính progress của project
+        const projectProgress = project.plan.timeline.reduce((acc, curr) => {
+          return acc + curr.percentOfProject.percent * curr.progress;
+        }, 0);
+        project.progress = projectProgress;
+
+        await project.save();
+      }
     }
 
     if (req.body.tags) {

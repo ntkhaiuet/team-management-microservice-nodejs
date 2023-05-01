@@ -38,6 +38,11 @@ const TaskSchema = new Schema(
     ],
     createdAt: { type: String, default: formattedDate },
     order: { type: Number, required: true },
+    percentOfStage: {
+      weight: { type: Number, default: 0 },
+      percent: { type: Number, default: 0 },
+    },
+    progress: { type: Number, default: 0 },
   },
   {
     versionKey: false,
