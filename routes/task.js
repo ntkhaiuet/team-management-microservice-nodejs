@@ -608,12 +608,6 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       updateFields.order = req.body.order;
     }
 
-    if (updatesContent.length > 0) {
-      updateFields.$push = {
-        updates: { content: updatesContent.join("; ") },
-      };
-    }
-
     const user = await User.findOne({
       _id: req.userId,
       "projects.project": task.projectId,
@@ -626,7 +620,11 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     }
 
     task = Object.assign(task, updateFields);
+    if (updatesContent.length > 0) {
+      task.updates.push({ content: updatesContent.join("; ") });
+    }
     await task.save();
+    console.log(task);
 
     res.json({
       success: true,
