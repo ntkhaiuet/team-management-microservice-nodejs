@@ -451,7 +451,12 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *                    "updates": [
  *                      {
  *                        "timestamp": "14:58:40 23/04/2023",
- *                        "content": "Title: Task1; Description: Mô tả của Task1; Assign: ntkhaiuet@gmail.com; Due Date: 23/04/2023; Estimate: 4 Hours; Spend: 5 Hours; Status: Doing; Tags: #Tags1,#Tags2; Comment: Đã làm được 50% task"
+ *                        "content": "Title: Task1; Description: Mô tả của Task1; Assign: ntkhaiuet@gmail.com; Due Date: 23/04/2023; Estimate: 4 Hours; Spend: 5 Hours; Status: Doing; Tags: #Tags1,#Tags2; Comment: Đã làm được 50% task",
+ *                        "user": {
+ *                                  "id": "64306cd1057f909e03c62863",
+ *                                  "email": "ntkhaiuet@gmail.com",
+ *                                  "full_name": "ntkhaiuet"
+ *                        }
  *                      }
  *                    ],
  *                    "spend": "5 Hours",
@@ -621,7 +626,14 @@ router.put("/update/:id", verifyToken, async (req, res) => {
 
     task = Object.assign(task, updateFields);
     if (updatesContent.length > 0) {
-      task.updates.push({ content: updatesContent.join("; ") });
+      task.updates.push({
+        content: updatesContent.join("; "),
+        user: {
+          id: req.userId,
+          email: req.userEmail,
+          full_name: req.userFullName,
+        },
+      });
     }
     await task.save();
     console.log(task);

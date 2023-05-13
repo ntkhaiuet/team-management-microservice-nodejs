@@ -34,6 +34,11 @@ const TaskSchema = new Schema(
         _id: { type: false },
         timestamp: { type: String, default: formattedDate },
         content: { type: String },
+        user: {
+          id: { type: Schema.Types.ObjectId },
+          email: { type: String },
+          full_name: { type: String },
+        },
       },
     ],
     createdAt: { type: String, default: formattedDate },
