@@ -639,7 +639,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     }
 
     if (commentUsers.length > 0) {
-      updatesContent.push(`commentUsers: ${commentUsers}`);
+      updateFields.commentUsers = commentUsers;
     }
 
     if (req.body.order) {
