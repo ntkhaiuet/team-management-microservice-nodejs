@@ -463,7 +463,7 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *                    "order": 1
  *                  }
  *      400:
- *        description: Title đã tồn tại/Assign không tồn tại/Id của task không đúng/User không tồn tại hoặc không thuộc project
+ *        description: Id của task không đúng/Không tìm thấy project với id đã cho/Stage không tồn tại trong timeline/Title đã tồn tại/Assign không tồn tại/User không tồn tại hoặc không thuộc project
  *        content:
  *          application/json:
  *            schema:
@@ -472,7 +472,7 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Title đã tồn tại/Assign không tồn tại/Id của task không đúng/User không tồn tại hoặc không thuộc project
+ *                  default: Id của task không đúng/Không tìm thấy project với id đã cho/Stage không tồn tại trong timeline/Title đã tồn tại/Assign không tồn tại/User không tồn tại hoặc không thuộc project
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -502,18 +502,20 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     }
 
     if (req.body.stage) {
-      const existingStage = await Project.findOne({
-        _id: task.projectId,
-      });
-      if (
-        existingStage &&
-        existingStage.plan.timeline.find(
-          (item) => item.stage === req.body.stage && item.stage !== task.stage
-        )
-      ) {
+      const existingProject = await Project.findById(task.projectId);
+      if (!existingProject) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy project với id đã cho",
+        });
+      }
+      const stageExistsInTimeline = existingProject.plan.timeline.find(
+        (item) => item.stage === req.body.stage
+      );
+      if (!stageExistsInTimeline) {
         return res.status(400).json({
           success: false,
-          message: "Stage đã tồn tại",
+          message: "Stage không tồn tại trong timeline",
         });
       }
       updateFields.stage = req.body.stage;
@@ -636,7 +638,6 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       });
     }
     await task.save();
-    console.log(task);
 
     res.json({
       success: true,
