@@ -76,7 +76,7 @@ router.get(
         accessToken = jwt.sign(
           {
             userId: newUser._id,
-            userFullname: newUser.full_name,
+            userFullName: newUser.full_name,
             userEmail: newUser.email,
           },
           process.env.ACCESS_TOKEN_SECRET
@@ -86,7 +86,7 @@ router.get(
         accessToken = jwt.sign(
           {
             userId: user._id,
-            userFullname: user.full_name,
+            userFullName: user.full_name,
             userEmail: user.email,
           },
           process.env.ACCESS_TOKEN_SECRET
