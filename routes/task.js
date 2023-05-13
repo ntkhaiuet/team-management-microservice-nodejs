@@ -7,6 +7,7 @@ const { dateDiff } = require("../middleware/dateDiff");
 const User = require("../models/User");
 const Project = require("../models/Project");
 const Task = require("../models/Task");
+const Notification = require("../models/Notification");
 
 /**
  * @swagger
@@ -490,6 +491,9 @@ router.put("/update/:id", verifyToken, async (req, res) => {
 
   try {
     let task = await Task.findById(id);
+    let userAction = await User.findById(req.userId);
+    let notificationSave = [];
+    let commentUsers = [];
     if (!task) {
       return res
         .status(400)
@@ -541,6 +545,14 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         });
       }
       updateFields.assign = req.body.assign;
+      const notification = new Notification({
+          projectId : task.projectId,
+          taskId : task.id,
+          userId : assignUser.id,
+          content : userAction.full_name + " đã assign task cho " +  assignUser.full_name,
+          type: "Assign"
+      });
+      notificationSave.push(notification)
       updatesContent.push(`Assign: ${req.body.assign}`);
     }
 
@@ -562,6 +574,13 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     if (req.body.status) {
       updateFields.status = req.body.status;
       updatesContent.push(`Status: ${req.body.status}`);
+      const notification = new Notification({
+        projectId : task.projectId,
+        taskId : task.id,
+        userId : req.userId,
+        content : userAction.full_name + " đã thay đổi trạng thái của task ",
+      });
+      notificationSave.push(notification)
 
       if (req.body.status === "Done") {
         task.progress = 1;
@@ -602,6 +621,18 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     if (req.body.comment) {
       updateFields.comment = req.body.comment;
       updatesContent.push(`Comment: ${req.body.comment}`);
+      const notification = new Notification({
+        projectId : task.projectId,
+        taskId : task.id,
+        userId : req.userId,
+        content : userAction.full_name + " đã comment trong task ",
+      });
+      notificationSave.push(notification)
+      commentUsers.push(req.userId)
+    }
+
+    if (commentUsers.length > 0) {
+      updatesContent.push(`commentUsers: ${commentUsers}`);
     }
 
     if (req.body.order) {
@@ -627,6 +658,10 @@ router.put("/update/:id", verifyToken, async (req, res) => {
 
     task = Object.assign(task, updateFields);
     await task.save();
+
+    if (notificationSave.length > 0) {
+      Notification.insertMany(notificationSave)
+    }
 
     res.json({
       success: true,
