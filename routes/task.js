@@ -553,13 +553,14 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       }
       updateFields.assign = req.body.assign;
       const notification = new Notification({
-          projectId : task.projectId,
-          taskId : task.id,
-          userId : assignUser.id,
-          content : userAction.full_name + " đã assign task cho " +  assignUser.full_name,
-          type: "Assign"
+        projectId: task.projectId,
+        taskId: task.id,
+        userId: assignUser.id,
+        content:
+          userAction.full_name + " đã assign task cho " + assignUser.full_name,
+        type: "Assign",
       });
-      notificationSave.push(notification)
+      notificationSave.push(notification);
       updatesContent.push(`Assign: ${req.body.assign}`);
     }
 
@@ -582,12 +583,12 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       updateFields.status = req.body.status;
       updatesContent.push(`Status: ${req.body.status}`);
       const notification = new Notification({
-        projectId : task.projectId,
-        taskId : task.id,
-        userId : req.userId,
-        content : userAction.full_name + " đã thay đổi trạng thái của task ",
+        projectId: task.projectId,
+        taskId: task.id,
+        userId: req.userId,
+        content: userAction.full_name + " đã thay đổi trạng thái của task ",
       });
-      notificationSave.push(notification)
+      notificationSave.push(notification);
 
       if (req.body.status === "Done") {
         task.progress = 1;
@@ -629,13 +630,13 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       updateFields.comment = req.body.comment;
       updatesContent.push(`Comment: ${req.body.comment}`);
       const notification = new Notification({
-        projectId : task.projectId,
-        taskId : task.id,
-        userId : req.userId,
-        content : userAction.full_name + " đã comment trong task ",
+        projectId: task.projectId,
+        taskId: task.id,
+        userId: req.userId,
+        content: userAction.full_name + " đã comment trong task ",
       });
-      notificationSave.push(notification)
-      commentUsers.push(req.userId)
+      notificationSave.push(notification);
+      commentUsers.push(req.userId);
     }
 
     if (commentUsers.length > 0) {
@@ -671,7 +672,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     await task.save();
 
     if (notificationSave.length > 0) {
-      Notification.insertMany(notificationSave)
+      Notification.insertMany(notificationSave);
     }
 
     res.json({
@@ -751,6 +752,122 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
     }
 
     res.status(200).json({ success: true, message: "Xóa task thành công" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/task/assign:
+ *  get:
+ *    summary: Nhận thông tin các task được assign
+ *    tags: [Tasks]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Nhận thông tin các task được assign
+ *    responses:
+ *      200:
+ *        description: Nhận thông tin các task được giao thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Nhận thông tin các task được giao thành công
+ *      400:
+ *        description: Người dùng không tồn tại/Chưa có task được giao cho người dùng
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Người dùng không tồn tại/Chưa có task được giao cho người dùng
+ *                tasks:
+ *                  default: [
+ *                    {
+ *                      "projectId": "643416cd4a60456d281a5192",
+ *                      "projectName": "MyProject",
+ *                      "title": "Task1",
+ *                      "description": "Mô tả của Task1",
+ *                      "duedate": "23/04/2023",
+ *                      "status": "Doing",
+ *                      "createdAt": "08:14:05 23/04/2023"
+ *                    },
+ *                    {
+ *                      "projectId": "6434449455e477a461272f9b",
+ *                      "projectName": "MyProjec3+1",
+ *                      "title": "Task1111",
+ *                      "description": "Mô tả của Task1",
+ *                      "duedate": "23/04/2023",
+ *                      "status": "Doing",
+ *                      "createdAt": "23:39:12 23/04/2023"
+ *                    }
+ *                  ]
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Lỗi hệ thống
+ */
+// @route GET api/task/assign
+// @desc Nhận thông tin các task được assign
+// @access Private
+router.get("/assign", verifyToken, async (req, res) => {
+  try {
+    const [user, tasks] = await Promise.all([
+      User.findById(req.userId),
+      Task.find({ assign: req.userEmail }).populate({
+        path: "projectId",
+        select: "_id name",
+      }),
+    ]);
+
+    // Kiểm tra user tồn tại
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Người dùng không tồn tại",
+      });
+    }
+
+    if (tasks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Chưa có task được giao cho người dùng",
+      });
+    }
+
+    const filteredTasks = tasks
+      .filter((task) => task.projectId)
+      .map((task) => ({
+        projectId: task.projectId._id,
+        projectName: task.projectId.name,
+        title: task.title,
+        description: task.description,
+        duedate: task.duedate,
+        status: task.status,
+        createdAt: task.createdAt,
+      }));
+
+    res.status(200).json({
+      success: true,
+      message: "Nhận thông tin các task được giao thành công",
+      tasks: filteredTasks,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Lỗi hệ thống" });

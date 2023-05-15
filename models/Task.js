@@ -3,19 +3,6 @@ const Schema = mongoose.Schema;
 
 const formattedDate = require("../middleware/formatDate");
 
-// const CommentSchema = new Schema(
-//   {
-//     content: { type: String, required: true },
-//     author: { type: String, required: true },
-//     createdAt: { type: String, default: formattedDate },
-//   },
-//   {
-//     versionKey: false,
-//   }
-// );
-
-// comments: [CommentSchema],
-
 const TaskSchema = new Schema(
   {
     projectId: { type: Schema.Types.ObjectId, ref: "Project" },
@@ -48,9 +35,7 @@ const TaskSchema = new Schema(
       percent: { type: Number, default: 0 },
     },
     progress: { type: Number, default: 0 },
-    commentUsers: [
-      { type: Schema.Types.ObjectId, ref: "User" }
-    ]
+    commentUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   {
     versionKey: false,

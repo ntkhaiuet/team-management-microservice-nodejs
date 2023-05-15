@@ -827,6 +827,17 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
  *                  default: true
  *                message:
  *                  default: Rời khỏi project thành công
+ *      400:
+ *        description: Leader không thể rời project khi chưa chỉ định Leader mới
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Leader không thể rời project khi chưa chỉ định Leader mới
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -846,6 +857,19 @@ router.put("/outproject/:projectId", verifyToken, async (req, res) => {
   const projectId = req.params.projectId;
 
   try {
+    const user = await User.findOne({
+      _id: req.userId,
+      "projects.project": projectId,
+      "projects.role": "Leader",
+    });
+
+    if (user) {
+      return res.status(400).json({
+        success: false,
+        message: "Leader không thể rời project khi chưa chỉ định Leader mới",
+      });
+    }
+
     await User.updateOne(
       { _id: req.userId, "projects.role": { $in: ["Member", "Reviewer"] } },
       { $pull: { projects: { project: projectId } } }
@@ -935,7 +959,7 @@ router.get("/projects/count", verifyToken, async (req, res) => {
 
     const userProjectInviteCount = await ProjectInvite.countDocuments({
       "users.email": user.email,
-      "users.status": "Waiting"
+      "users.status": "Waiting",
     });
 
     const userProjectProcessingCount = await Project.countDocuments({

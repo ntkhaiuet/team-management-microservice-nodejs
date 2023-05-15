@@ -927,6 +927,9 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
     // Xóa project trong collection projectinvites
     await ProjectInvite.findOneAndDelete({ project: projectId });
 
+    // Xóa task trong project
+    await Task.deleteMany({ projectId: projectId });
+
     res.status(200).json({
       success: true,
       message: "Xóa project thành công",
