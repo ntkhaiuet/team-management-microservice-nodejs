@@ -118,7 +118,7 @@ router.get("/list", verifyToken, async function (req, res) {
     const commentTask = await Task.find({ commentUsers: req.userId })
     const taskIds = commentTask.map(task => task._id);
     const listNotifyAssign = await Notification.find({ taskId: { $in: taskIds }, type: 'Assign', userId: userId }).sort({ createdAt: -1 });
-    const listNotifyComment = await Notification.find({ taskId: { $in: taskIds }, type: 'Assign', userId: { $ne: userId } }).sort({ createdAt: -1 });
+    const listNotifyComment = await Notification.find({ taskId: { $in: taskIds }, type: 'Other', userId: { $ne: userId } }).sort({ createdAt: -1 });
     userNotifications = [...listNotifyAssign, ...listNotifyComment];
     const unreadCount = userNotifications.filter(item => item.status === 'Unread').length;
     res.status(200).json({
