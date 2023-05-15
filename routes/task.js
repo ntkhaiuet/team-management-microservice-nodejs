@@ -852,6 +852,7 @@ router.get("/assign", verifyToken, async (req, res) => {
     }
 
     const filteredTasks = tasks
+      .reverse()
       .filter((task) => task.projectId)
       .map((task) => ({
         projectId: task.projectId._id,
