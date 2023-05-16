@@ -11,7 +11,7 @@ const NotificationSchema = new Schema(
     content: { type: String, required: true },
     status: { type: String, enum: ["Read", "Unread"], default: "Unread" },
     type: { type: String, enum: ["Assign", "Other"], default: "Other" },
-    createdAt: { type: String, default: formattedDate },
+    createdAt: { type: String, default: Date.now() },
   },
   {
     versionKey: false,

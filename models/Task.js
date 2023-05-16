@@ -35,7 +35,12 @@ const TaskSchema = new Schema(
       percent: { type: Number, default: 0 },
     },
     progress: { type: Number, default: 0 },
-    commentUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    commentUsers: [
+      { 
+        userId: {type: Schema.Types.ObjectId, ref: "User" },
+        commentAt: { type: Number, default: Date.now() }
+      },
+    ]
   },
   {
     versionKey: false,
