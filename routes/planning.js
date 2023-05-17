@@ -201,6 +201,9 @@ router.post("/create/:id", verifyToken, async (req, res) => {
       0
     );
     planningProject.progress = projectProgress;
+    if (planningProject.status === "Completed") {
+      planningProject.status = "Processing";
+    }
     await planningProject.save();
 
     res.status(200).json({
@@ -657,6 +660,9 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
       0
     );
     planningProject.progress = projectProgress;
+    if (projectProgress === 1) {
+      planningProject.status = "Completed";
+    }
 
     await planningProject.save();
 

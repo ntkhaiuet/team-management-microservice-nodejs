@@ -236,6 +236,9 @@ router.post("/create", verifyToken, async (req, res) => {
       return acc + curr.percentOfProject.percent * curr.progress;
     }, 0);
     checkProject.progress = projectProgress;
+    if (checkProject.status === "Completed") {
+      checkProject.status = "Processing";
+    }
 
     await checkProject.save();
 
@@ -616,6 +619,10 @@ router.put("/update/:id", verifyToken, async (req, res) => {
           return acc + curr.percentOfProject.percent * curr.progress;
         }, 0);
         project.progress = projectProgress;
+        // Cập nhật trạng thái project nếu hoàn thành project
+        if (projectProgress === 1) {
+          project.status = "Completed";
+        }
 
         await project.save();
       }
