@@ -16,6 +16,7 @@ const projectRouter = require("./routes/project");
 const planningRouter = require("./routes/planning");
 const taskRouter = require("./routes/task");
 const notificationRouter = require("./routes/notification");
+const reviewRouter = require("./routes/review");
 
 // Kết nối DB
 const connectDB = async () => {
@@ -80,6 +81,7 @@ app.use("/api/project", projectRouter);
 app.use("/api/planning", planningRouter);
 app.use("/api/task", taskRouter);
 app.use("/api/notification", notificationRouter);
+app.use("/api/review", reviewRouter);
 
 const PORT = 3000;
 

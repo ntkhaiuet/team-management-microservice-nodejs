@@ -720,7 +720,7 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
 
     // Kiểm tra lời mời tồn tại
     const projectInvite = await ProjectInvite.findOne({
-      projectId: projectId,
+      project: projectId,
       "users.email": user.email,
     });
     if (!projectInvite) {
@@ -792,6 +792,7 @@ router.put("/:projectId/invite/respond", verifyToken, async (req, res) => {
       success: true,
       message: "Xác nhận phản hồi lời mời thành công",
       project_id: projectId,
+      userInvite: userInvite,
     });
   } catch (error) {
     console.log(error);
