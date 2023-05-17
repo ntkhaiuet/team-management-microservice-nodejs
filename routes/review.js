@@ -401,7 +401,7 @@ router.put("/update/:taskorprojectid", verifyToken, async (req, res) => {
 
     // Kiểm tra taskOrProjectId xem có phải id của task không
     if (task) {
-      projectIdByTask = task.projectId;
+      projectIdByTask = task.projectId.toString();
     }
 
     // Kiểm tra user tồn tại và là Reviewer của project
@@ -415,7 +415,7 @@ router.put("/update/:taskorprojectid", verifyToken, async (req, res) => {
     //   Kiểm tra người dùng có phải reviewer không
     const isReviewer = user.projects.find((element) => {
       return (
-        element.project == (projectIdByTask.toString() || taskOrProjectId) &&
+        element.project == (projectIdByTask || taskOrProjectId) &&
         element.role === "Reviewer"
       );
     });
