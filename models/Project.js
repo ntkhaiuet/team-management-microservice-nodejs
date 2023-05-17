@@ -12,6 +12,7 @@ const ProjectSchema = new Schema(
       type: String,
       enum: ["Processing", "Completed"],
     },
+    duedate: { type: String, default: null },
     plan: {
       topic: { type: String },
       target: { type: String },

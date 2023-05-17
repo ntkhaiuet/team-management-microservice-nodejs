@@ -61,7 +61,7 @@ const Task = require("../models/Task");
  *    tags: [Projects]
  *    security:
  *      - bearerAuth: []
- *    description: Tạo project mới (name là bắt buộc, description và listUserInvite có thể không cần truyền)
+ *    description: Tạo project mới (name là bắt buộc, description, duedate và listUserInvite có thể không cần truyền)
  *    requestBody:
  *      required: true
  *      content:
@@ -73,6 +73,8 @@ const Task = require("../models/Task");
  *                default: MyProject
  *              description:
  *                default: Mô tả
+ *              duedate:
+ *                default: 01/06/2023
  *              listUserInvite:
  *                default: [{email: "example1@gmail.com", role: "Member"}, {email: "example2@gmail.com", role: "Reviewer"}]
  *    responses:
@@ -124,10 +126,10 @@ const Task = require("../models/Task");
  *                  default: Lỗi hệ thống
  */
 // @route POST api/project/create
-// @desc Test 1 project mới
+// @desc Tạo 1 project mới
 // @access Private
 router.post("/create", verifyToken, async (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, duedate } = req.body;
   let listUserInvite = req.body.listUserInvite || [];
   let roleUserCreator = "Leader";
 
@@ -206,6 +208,7 @@ router.post("/create", verifyToken, async (req, res) => {
       name,
       description: description || "",
       status: "Processing",
+      duedate: duedate || null,
       users: [
         {
           email: req.userEmail,
@@ -274,6 +277,8 @@ router.post("/create", verifyToken, async (req, res) => {
  *                default: Description
  *              status:
  *                default: Completed
+ *              duedate:
+ *                default: 02/06/2023
  *              user:
  *                default: {"email": "ntkhaiuet@gmail.com", "role": "Leader"}
  *              teammate:
@@ -298,6 +303,10 @@ router.post("/create", verifyToken, async (req, res) => {
  *                  default: Mô tả
  *                project_status:
  *                  default: Processing
+ *                project_duedate:
+ *                  default: 02/06/2023
+ *                project_progress:
+ *                  default: 0
  *                project_createdAt:
  *                  default: 22:03:58 09/04/2023
  *                user:
@@ -320,7 +329,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                    }
  *                  ]
  *      400:
- *        description: Vui lòng nhập name, description, status, user, teammate/Project phải có 1 leader là thành viên đã tham gia nhóm/Tên project đã tồn tại/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
+ *        description: Vui lòng nhập name hoặc description hoặc status hoặc duedate hoặc user hoặc teammate/Project phải có 1 leader là thành viên đã tham gia nhóm/Tên project đã tồn tại/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
  *        content:
  *          application/json:
  *            schema:
@@ -329,7 +338,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Vui lòng nhập name, description, status, user, teammate/Project phải có 1 leader là thành viên đã tham gia nhóm/Tên project đã tồn tại/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
+ *                  default: Vui lòng nhập name hoặc description hoặc status hoặc duedate hoặc user hoặc teammate/Project phải có 1 leader là thành viên đã tham gia nhóm/Tên project đã tồn tại/Người dùng trong user hoặc teammate không tồn tại/ProjectId không đúng hoặc người dùng không có quyền
  *                usersNotFound:
  *                  default: [
  *                    {
@@ -359,19 +368,20 @@ router.post("/create", verifyToken, async (req, res) => {
 // @desc Cập nhật thông tin project
 // @access Private
 router.put("/edit/:id", verifyToken, async (req, res) => {
-  const { name, description, status, user, teammate } = req.body;
+  const { name, description, status, duedate, user, teammate } = req.body;
   const projectId = req.params.id;
 
   // Kiểm tra các trường bắt buộc
-  if (!name || !description || !status || !user || !teammate) {
+  if (!name && !description && !status && !duedate && !user && !teammate) {
     return res.status(400).json({
       success: false,
-      message: "Vui lòng nhập name, description, status, user, teammate",
+      message:
+        "Vui lòng nhập name hoặc description hoặc status hoặc duedate hoặc user hoặc teammate",
     });
   }
 
   // Kiểm tra users sau khi sửa có tồn tại Leader không
-  if (user.role !== "Leader") {
+  if (user && user.role !== "Leader") {
     var isExistLeader = false;
 
     for (let i = 0; i < teammate.length; i++) {
@@ -408,45 +418,61 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
       }
     }
 
-    // Kiểm tra user và teammate tồn tại
-    const tempUser = { email: user.email, role: user.role, status: "Joined" };
-    const tempTeammate = teammate.slice();
-    tempTeammate.push(tempUser);
-
-    const existingUsers = await User.find({
-      email: { $in: tempTeammate.map((user) => user.email) },
-      email_verified: true,
-    });
-
-    const usersNotFound = tempTeammate.filter(
-      (user) =>
-        !existingUsers.some((existingUser) => existingUser.email === user.email)
-    );
-
-    if (usersNotFound.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Người dùng trong user hoặc teammate không tồn tại",
-        usersNotFound: usersNotFound,
-      });
-    }
-
-    // Lọc các users đã join project
-    const projectUsers = [];
-    for (let i = 0; i < teammate.length; i++) {
-      if (teammate[i].status === "Joined") {
-        projectUsers.push({ email: teammate[i].email, role: teammate[i].role });
-      }
-    }
-    projectUsers.push(user);
-
     // Dữ liệu cần cập nhật
-    const conditionUpdateProject = {
-      name: name,
-      description: description,
-      status: status,
-      users: projectUsers,
-    };
+    let conditionUpdateProject = {};
+
+    if (user && teammate) {
+      // Kiểm tra user và teammate tồn tại
+      const tempUser = { email: user.email, role: user.role, status: "Joined" };
+      const tempTeammate = teammate.slice();
+      tempTeammate.push(tempUser);
+
+      const existingUsers = await User.find({
+        email: { $in: tempTeammate.map((user) => user.email) },
+        email_verified: true,
+      });
+
+      const usersNotFound = tempTeammate.filter(
+        (user) =>
+          !existingUsers.some(
+            (existingUser) => existingUser.email === user.email
+          )
+      );
+
+      if (usersNotFound.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Người dùng trong user hoặc teammate không tồn tại",
+          usersNotFound: usersNotFound,
+        });
+      }
+
+      // Lọc các users đã join project
+      const projectUsers = [];
+      for (let i = 0; i < teammate.length; i++) {
+        if (teammate[i].status === "Joined") {
+          projectUsers.push({
+            email: teammate[i].email,
+            role: teammate[i].role,
+          });
+        }
+      }
+      projectUsers.push(user);
+      conditionUpdateProject.users = projectUsers;
+    }
+
+    if (name) {
+      conditionUpdateProject.name = name;
+    }
+    if (description) {
+      conditionUpdateProject.description = description;
+    }
+    if (status) {
+      conditionUpdateProject.status = status;
+    }
+    if (duedate) {
+      conditionUpdateProject.duedate = duedate;
+    }
 
     // Cập nhật name, description, status, user, teammate của project có _id là projectId, người dùng hiện tại là Leader của project đó
     const updateProject = await Project.findOneAndUpdate(
@@ -498,6 +524,8 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
       project_name: updateProject.name,
       project_description: updateProject.description,
       project_status: updateProject.status,
+      projejct_duedate: updateProject.duedate,
+      projejct_progress: updateProject.progress,
       project_createdAt: updateProject.createdAt,
       user,
       teammate,
@@ -548,7 +576,8 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *                      "name": "MyProjec3",
  *                      "description": "Mô tả",
  *                      "status": "Processing",
- *                      "progress": "0.90",
+ *                      "duedate": "01/06/2023",
+ *                      "progress": "0.9",
  *                      "user": {
  *                        "email": "ntkhaiuet@gmail.com",
  *                        "role": "Leader"
@@ -559,7 +588,8 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
  *                      "name": "MyProjec4",
  *                      "description": "Mô tả",
  *                      "status": "Completed",
- *                      "progress": "1.00",
+ *                      "duedate": "02/06/2023",
+ *                      "progress": "1",
  *                      "user": {
  *                        "email": "ntkhaiuet@gmail.com",
  *                        "role": "Leader"
@@ -617,6 +647,7 @@ router.post("/list", verifyToken, async function (req, res) {
           name: projectWithUser.project.name,
           description: projectWithUser.project.description,
           status: projectWithUser.project.status,
+          duedate: projectWithUser.project.duedate,
           progress: projectWithUser.project.progress,
           user: {
             email: currentUser.email,
@@ -690,6 +721,8 @@ router.post("/list", verifyToken, async function (req, res) {
  *                  default: Mô tả
  *                project_status:
  *                  default: Processing
+ *                project_duedate:
+ *                  default: 0.5
  *                project_progress:
  *                  default: 0
  *                project_createdAt:
@@ -831,6 +864,7 @@ router.get("/:projectId", verifyToken, async function (req, res) {
       project_name: project.name,
       project_description: project.description,
       project_status: project.status,
+      project_duedate: project.duedate,
       project_progress: project.progress,
       project_createdAt: project.createdAt,
       user: userInfo,
