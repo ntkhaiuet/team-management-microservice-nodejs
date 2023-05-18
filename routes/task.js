@@ -867,6 +867,7 @@ router.get("/assign", verifyToken, async (req, res) => {
         title: task.title,
         description: task.description,
         duedate: task.duedate,
+        estimate: task.estimate,
         status: task.status,
         createdAt: task.createdAt,
       }));
