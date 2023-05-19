@@ -3,6 +3,7 @@ const router = express.Router();
 const verifyToken = require("../middleware/auth");
 
 const { dateDiff } = require("../middleware/dateDiff");
+const formatUnixTime = require("../middleware/formatUnixTime");
 
 const User = require("../models/User");
 const Project = require("../models/Project");
@@ -118,8 +119,13 @@ router.get("/list", verifyToken, async function (req, res) {
     const commentTask = await Task.find({ commentUsers: req.userId })
     const taskIds = commentTask.map(task => task._id);
     const listNotifyAssign = await Notification.find({ taskId: { $in: taskIds }, type: 'Assign', userId: userId }).sort({ createdAt: -1 });
-    const listNotifyComment = await Notification.find({ taskId: { $in: taskIds }, type: 'Other', userId: { $ne: userId } }).sort({ createdAt: -1 });
-    userNotifications = [...listNotifyAssign, ...listNotifyComment];
+    // const listNotifyComment = await Notification.find({ taskId: { $in: taskIds }, type: 'Other', userId: { $ne: userId } }).sort({ createdAt: -1 });
+    userNotifications = listNotifyAssign.concat(...listNotifyComment);
+    userNotifications.forEach((notification) => {
+      const unixTime = notification.createdAt
+      const fomrattedTime = formatUnixTime(+unixTime);
+      notification.createdAt = fomrattedTime
+    });
     const unreadCount = userNotifications.filter(item => item.status === 'Unread').length;
     res.status(200).json({
       success: true,
