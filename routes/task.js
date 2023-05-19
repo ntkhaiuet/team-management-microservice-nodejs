@@ -864,6 +864,7 @@ router.get("/assign", verifyToken, async (req, res) => {
       .map((task) => ({
         projectId: task.projectId._id,
         projectName: task.projectId.name,
+        taskId: task._id,
         title: task.title,
         description: task.description,
         duedate: task.duedate,
