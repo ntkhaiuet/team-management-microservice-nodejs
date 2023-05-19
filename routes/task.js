@@ -8,6 +8,8 @@ const User = require("../models/User");
 const Project = require("../models/Project");
 const Task = require("../models/Task");
 const Notification = require("../models/Notification");
+const formattedDate = require("../middleware/formatDate");
+
 
 /**
  * @swagger
@@ -642,8 +644,16 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         userId: req.userId,
         content: userAction.full_name + " đã comment trong task ",
       });
-      notificationSave.push(notification);
-      commentUsers.push(req.userId);
+      notificationSave.push(notification)
+      const existingCommentUser = task.commentUsers.find(
+        (user) => user.userId.toString() === req.userId
+      );
+      if (!existingCommentUser) {
+        commentUsers.push({
+          userId: req.userId,
+          commentAt: Date.now()
+        });
+      }
     }
 
     if (commentUsers.length > 0) {
@@ -679,6 +689,10 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     await task.save();
 
     if (notificationSave.length > 0) {
+      currentTime = Date.now()
+      notificationSave.forEach((notification) => {
+        notification.createdAt = currentTime;
+      });
       Notification.insertMany(notificationSave);
     }
 

@@ -3,6 +3,7 @@ const router = express.Router();
 const verifyToken = require("../middleware/auth");
 
 const { dateDiff } = require("../middleware/dateDiff");
+const formatUnixTime = require("../middleware/formatUnixTime");
 
 const User = require("../models/User");
 const Project = require("../models/Project");
@@ -115,11 +116,35 @@ router.get("/list", verifyToken, async function (req, res) {
           "Không tìm thấy người dùng",
       });
     }
-    const commentTask = await Task.find({ commentUsers: req.userId })
+    const commentTask = await Task.find({ "commentUsers.userId" : req.userId })
+    const listNotifyCommentPromises = commentTask.map(async (task) => {
+      const commentUser = task.commentUsers.find(user => user.userId.toString() === userId)
+      if (commentUser) {
+        const commentAt = commentUser.commentAt;
+        return Notification.find({
+          taskId: task._id,
+          type: "Other",
+          userId: { $ne: userId },
+          createdAt: { $gte: commentAt },
+        })
+          .sort({ createdAt: -1 })
+          .exec();
+      } else {
+        return [];
+      }
+    });
+
+    const listNotifyComment = await Promise.all(listNotifyCommentPromises);
+    
     const taskIds = commentTask.map(task => task._id);
     const listNotifyAssign = await Notification.find({ taskId: { $in: taskIds }, type: 'Assign', userId: userId }).sort({ createdAt: -1 });
-    const listNotifyComment = await Notification.find({ taskId: { $in: taskIds }, type: 'Other', userId: { $ne: userId } }).sort({ createdAt: -1 });
-    userNotifications = [...listNotifyAssign, ...listNotifyComment];
+    // const listNotifyComment = await Notification.find({ taskId: { $in: taskIds }, type: 'Other', userId: { $ne: userId } }).sort({ createdAt: -1 });
+    userNotifications = listNotifyAssign.concat(...listNotifyComment);
+    userNotifications.forEach((notification) => {
+      const unixTime = notification.createdAt
+      const fomrattedTime = formatUnixTime(+unixTime);
+      notification.createdAt = fomrattedTime
+    });
     const unreadCount = userNotifications.filter(item => item.status === 'Unread').length;
     res.status(200).json({
       success: true,
