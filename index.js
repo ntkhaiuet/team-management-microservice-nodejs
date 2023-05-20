@@ -18,6 +18,8 @@ const taskRouter = require("./routes/task");
 const notificationRouter = require("./routes/notification");
 const reviewRouter = require("./routes/review");
 const statisticRouter = require("./routes/statistic");
+const uploadRouter = require('./routes/upload');
+const folderRouter = require('./routes/folder');
 
 // Kết nối DB
 const connectDB = async () => {
@@ -46,6 +48,9 @@ app.use(express.json());
 
 // Cho phép truy cập API từ bên ngoài vào tất cả routes
 app.use(cors());
+
+// Đăng ký route upload ảnh
+app.use(uploadRouter);
 
 // Cấu hình Swagger UI để hiển thị API documentation
 const options = {
@@ -84,6 +89,8 @@ app.use("/api/task", taskRouter);
 app.use("/api/notification", notificationRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/statistic", statisticRouter);
+app.use("/api/upload", uploadRouter);
+app.use("/api/folder", folderRouter);
 
 const PORT = 3000;
 
