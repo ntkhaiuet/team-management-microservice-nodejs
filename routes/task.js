@@ -10,6 +10,23 @@ const Task = require("../models/Task");
 const Notification = require("../models/Notification");
 const formattedDate = require("../middleware/formatDate");
 
+// Tính task chiếm bao nhiêu % của stage
+function percentTaskOfStage(task) {
+  const totalWeight = task.reduce((acc, curr) => {
+    return acc + curr.percentOfStage.weight;
+  }, 0);
+  for (let i = 0; i < task.length; i++) {
+    task[i].percentOfStage.percent =
+      task[i].percentOfStage.weight / totalWeight;
+  }
+}
+
+// Cập nhật weight và percent của percentOfStage
+async function updateTasks(taskArray) {
+  for (let task of taskArray) {
+    await task.save();
+  }
+}
 
 /**
  * @swagger
@@ -204,23 +221,6 @@ router.post("/create", verifyToken, async (req, res) => {
       stage: stage,
     });
 
-    // Tính task chiếm bao nhiêu % của stage
-    function percentTaskOfStage(task) {
-      const totalWeight = task.reduce((acc, curr) => {
-        return acc + curr.percentOfStage.weight;
-      }, 0);
-      for (let i = 0; i < task.length; i++) {
-        task[i].percentOfStage.percent =
-          task[i].percentOfStage.weight / totalWeight;
-      }
-    }
-
-    // Cập nhật weight và percent của percentOfStage
-    async function updateTasks(taskArray) {
-      for (let task of taskArray) {
-        await task.save();
-      }
-    }
     percentTaskOfStage(taskWithStage);
     await updateTasks(taskWithStage);
 
@@ -644,14 +644,14 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         userId: req.userId,
         content: userAction.full_name + " đã comment trong task ",
       });
-      notificationSave.push(notification)
+      notificationSave.push(notification);
       const existingCommentUser = task.commentUsers.find(
         (user) => user.userId.toString() === req.userId
       );
       if (!existingCommentUser) {
         commentUsers.push({
           userId: req.userId,
-          commentAt: Date.now()
+          commentAt: Date.now(),
         });
       }
     }
@@ -689,7 +689,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     await task.save();
 
     if (notificationSave.length > 0) {
-      currentTime = Date.now()
+      currentTime = Date.now();
       notificationSave.forEach((notification) => {
         notification.createdAt = currentTime;
       });
@@ -711,7 +711,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
  * @swagger
  * /api/task/delete/{id}:
  *  delete:
- *    summary: Xóa 1 task (chỉ dùng để dọn DB)
+ *    summary: Xóa 1 task
  *    tags: [Tasks]
  *    security:
  *      - bearerAuth: []
@@ -771,6 +771,36 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
         .status(400)
         .json({ success: false, message: "Id không tồn tại" });
     }
+
+    const [tasksWithStage, project] = await Promise.all([
+      Task.find({
+        projectId: deleteTask.projectId,
+        stage: deleteTask.stage,
+      }),
+      Project.findById(deleteTask.projectId),
+    ]);
+
+    percentTaskOfStage(tasksWithStage);
+
+    // Tính progress của stage
+    const stageProgress = tasksWithStage.reduce((acc, curr) => {
+      return acc + curr.percentOfStage.percent * curr.progress;
+    }, 0);
+    const indexStage = project.plan.timeline.findIndex(
+      (item) => item.stage === deleteTask.stage
+    );
+    project.plan.timeline[indexStage].progress = stageProgress;
+
+    // Tính progress của project
+    const projectProgress = project.plan.timeline.reduce((acc, curr) => {
+      return acc + curr.percentOfProject.percent * curr.progress;
+    }, 0);
+    project.progress = projectProgress;
+    if (projectProgress === 1) {
+      project.status = "Completed";
+    }
+
+    await Promise.all([updateTasks(tasksWithStage), project.save()]);
 
     res.status(200).json({ success: true, message: "Xóa task thành công" });
   } catch (error) {

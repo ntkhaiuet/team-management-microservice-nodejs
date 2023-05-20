@@ -191,4 +191,92 @@ router.get("/task", verifyToken, async (req, res) => {
   }
 });
 
+// @route GET api/statistic/review
+// @desc Thống kê các đánh giá và điểm của task, project
+// @access Private
+router.get("/review", verifyToken, async (req, res) => {
+  try {
+    const [user, tasks] = await Promise.all([
+      User.findById(req.userId),
+      Task.find({ assign: req.userEmail }).populate({
+        path: "projectId",
+        select: "_id name",
+      }),
+    ]);
+
+    // Kiểm tra user tồn tại
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Người dùng không tồn tại",
+      });
+    }
+
+    if (tasks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Chưa có task được giao cho người dùng",
+      });
+    }
+
+    // Lọc task theo projectId
+    const filteredTasks = tasks
+      .reverse()
+      .filter((task) => task.projectId)
+      .map((task) => ({
+        projectId: task.projectId._id,
+        projectName: task.projectId.name,
+        taskId: task._id,
+        title: task.title,
+      }));
+
+    const filteredReviewTasks = await Promise.all(
+      filteredTasks.map(async (task) => {
+        const review = await Review.findOne({ taskId: task.taskId });
+        return review
+          ? { ...task, review: review.review, score: review.score }
+          : null;
+      })
+    );
+
+    const tasksWithReview = filteredReviewTasks.filter((task) => task !== null);
+
+    const projectIds = {};
+    const filteredReviewProjects = await Promise.all(
+      filteredTasks.map(async (task) => {
+        const projectId = task.projectId;
+        if (!projectIds[projectId]) {
+          projectIds[projectId] = true;
+          const review = await Review.findOne({ projectId });
+          return review
+            ? {
+                projectId: task.projectId,
+                projectName: task.projectName,
+                review: review.review,
+                score: review.score,
+              }
+            : null;
+        }
+        return null;
+      })
+    );
+
+    const projectsWithReview = filteredReviewProjects.filter(
+      (task) => task !== null
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Thống kê các đánh giá và điểm của task và project thành công",
+      totalReviewTaskCount: tasksWithReview.length,
+      totalReviewProjectCount: projectsWithReview.length,
+      reviewTasks: tasksWithReview,
+      reviewProjects: projectsWithReview,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
+
 module.exports = router;
