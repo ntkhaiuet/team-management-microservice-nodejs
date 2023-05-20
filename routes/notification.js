@@ -25,7 +25,7 @@ const Notification = require("../models/Notification");
  *    tags: [Notifications]
  *    security:
  *      - bearerAuth: []
- *    description: Lấy list notification của user
+ *    description: Danh sách noti bao gồm (được người khác assign, người khác thay đổi status task và comment vào task mà người dùng đã comment, lấy những thông báo sau khi người dùng comment)
  *    responses:
  *      200:
  *        description: Lấy ra danh sách thành công
@@ -137,7 +137,7 @@ router.get("/list", verifyToken, async function (req, res) {
     const listNotifyComment = await Promise.all(listNotifyCommentPromises);
     
     const taskIds = commentTask.map(task => task._id);
-    const listNotifyAssign = await Notification.find({ taskId: { $in: taskIds }, type: 'Assign', userId: userId }).sort({ createdAt: -1 });
+    const listNotifyAssign = await Notification.find({type: 'Assign', userId: userId }).sort({ createdAt: -1 });
     // const listNotifyComment = await Notification.find({ taskId: { $in: taskIds }, type: 'Other', userId: { $ne: userId } }).sort({ createdAt: -1 });
     userNotifications = listNotifyAssign.concat(...listNotifyComment);
     userNotifications.forEach((notification) => {

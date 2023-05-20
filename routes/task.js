@@ -388,7 +388,7 @@ router.get("/read/:id", verifyToken, async (req, res) => {
  *    tags: [Tasks]
  *    security:
  *      - bearerAuth: []
- *    description: Cập nhật 1 task (Sửa trường nào thì truyền trường đó vào request body)
+ *    description: Cập nhật thông tin cho cho task (notify sẽ được lưu khi người dùng assign cho người khác, thay đổi status task và comment vào task)
  *    parameters:
  *      - in: path
  *        name: id
@@ -557,15 +557,17 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         });
       }
       updateFields.assign = req.body.assign;
-      const notification = new Notification({
-        projectId: task.projectId,
-        taskId: task.id,
-        userId: assignUser.id,
-        content:
-          userAction.full_name + " đã assign task cho " + assignUser.full_name,
-        type: "Assign",
-      });
-      notificationSave.push(notification);
+      if (assignUser.id !== req.userId) {
+        const notification = new Notification({
+          projectId: task.projectId,
+          taskId: task.id,
+          userId: assignUser.id,
+          content:
+            userAction.full_name + " đã assign task cho " + assignUser.full_name,
+          type: "Assign",
+        });
+        notificationSave.push(notification);
+      }
       updatesContent.push(`Assign: ${req.body.assign}`);
     }
 
