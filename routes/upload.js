@@ -146,10 +146,10 @@ router.post('/:folderId', upload.array('files', 10), verifyToken, async (req, re
     }
 
     if (items.length > 0) {
-      uploadFolder.items = items
+      uploadFolder.items.push(...items);
     }
-
-    await uploadFolder.save()
+    
+    await uploadFolder.save();
     res.status(200).json({ success: true, message: "Upload file thành công" });
     
   } catch (error) {
