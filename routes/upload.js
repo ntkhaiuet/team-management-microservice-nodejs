@@ -62,7 +62,7 @@ const upload = multer({
  *    tags: [Folders]
  *    security:
  *      - bearerAuth: []
- *    description: upload tài liệu lên 1 folder: jpeg, PNG, PNG, xls, xlsx, ZIP, RAR, pptx, MP4, doc, docx, txt
+ *    description: jpeg, PNG, PNG, xls, xlsx, ZIP, RAR, pptx, MP4, doc, docx, txt
  *    parameters:
  *      - in: path
  *        name: folderId
