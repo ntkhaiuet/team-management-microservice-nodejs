@@ -40,7 +40,10 @@ const upload = multer({
           'application/zip',
           'application/x-rar-compressed',
           'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-          'video/mp4'
+          'video/mp4',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'text/plain'
         ];
         if (allowedFileTypes.includes(file.mimetype)) {
           cb(null, true);
@@ -59,7 +62,7 @@ const upload = multer({
  *    tags: [Folders]
  *    security:
  *      - bearerAuth: []
- *    description: upload tài liệu lên 1 folder
+ *    description: upload tài liệu lên 1 folder: jpeg, PNG, PNG, xls, xlsx, ZIP, RAR, pptx, MP4, doc, docx, txt
  *    parameters:
  *      - in: path
  *        name: folderId
