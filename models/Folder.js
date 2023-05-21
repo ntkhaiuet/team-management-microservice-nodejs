@@ -13,7 +13,8 @@ const ForlderSchema = new Schema(
     items: [{
       id: {type: Schema.Types.ObjectId},
       url : { type: String, required: true },
-      author : { type: String, required: true }
+      author : { type: String, required: true },
+      createdAt : {type: String, default: formattedDate}
     }],
     createdAt: { type: String, default: formattedDate },
   },
