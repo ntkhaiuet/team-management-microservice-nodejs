@@ -152,13 +152,6 @@ router.post("/create", verifyToken, async (req, res) => {
             "Không tồn tại parent folder",
         });
       }
-      if (parent.name == name) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Không được đặt tên trùng với folder cha",
-        });
-      }
       path = parent.path + "/" + name
       depth = parent.depth + 1
     }
@@ -375,7 +368,7 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
  *    tags: [Folders]
  *    security:
  *      - bearerAuth: []
- *    description: Đổi tên, di chuyển ra thành folder cha hoặc sang làm folder con của 1 folder khác
+ *    description: Đổi tên folder
  *    parameters:
  *      - in: path
  *        name: id
@@ -392,8 +385,6 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
  *              properties:
  *                name:
  *                  default: Foler_Change
- *                parentFolder:
- *                  example: id parent folder, muốn là folder gốc thì parentFolder = 0
  *    responses:
  *      200:
  *        description: Thay đổi thông tin folder thành công
@@ -446,7 +437,6 @@ router.put("/update/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
   const {
     name,
-    parentFolder,
   } = req.body;
   try {
     const updateFields = {};
@@ -472,33 +462,26 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       updateFields.path = path
     }
     
-    if (typeof(parentFolder) !== "undefined") {
-      if (parentFolder === 0) {
-        updateFields.parentFolder = null
-        updateFields.path = nameFolder
-        updateFields.depth = 1
-      } else {
-        const oldParent = await Folder.findById(uploadFolder.parentFolder)
-        const newParent = await Folder.findById(parentFolder)
-        updateFields.parentFolder = parentFolder
-        updateFields.depth = newParent.depth + 1
-        if (newParent.name == nameFolder) {
-          return res.status(400).json({
-            success: false,
-            message:
-              "Không được đặt tên trùng với folder cha",
-          });
-        }
-        if (oldParent) {
-          path = path.replace(oldParent.name, newParent.name)
-        } else {
-          path = newParent.name + "/" + nameFolder
-        }
-        updateFields.path = path
-      }
-    }
+    // if (typeof(parentFolder) !== "undefined") {
+    //   if (parentFolder === 0) {
+    //     updateFields.parentFolder = null
+    //     updateFields.path = nameFolder
+    //     updateFields.depth = 1
+    //   } else {
+    //     const oldParent = await Folder.findById(uploadFolder.parentFolder)
+    //     const newParent = await Folder.findById(parentFolder)
+    //     updateFields.parentFolder = parentFolder
+    //     updateFields.depth = newParent.depth + 1
+    //     if (oldParent) {
+    //       path = path.replace(oldParent.name, newParent.name)
+    //     } else {
+    //       path = newParent.name + "/" + nameFolder
+    //     }
+    //     updateFields.path = path
+    //   }
+    // }
 
-    const existsFolder = await Folder.findOne({projectId : uploadFolder.projectId, name : updateFields.name, parentFolder : updateFields.parentFolder ?? null})
+    const existsFolder = await Folder.findOne({projectId : uploadFolder.projectId, name : updateFields.name, parentFolder : uploadFolder.parentFolder})
     if (existsFolder) {
       return res.status(400).json({
         success: false,
@@ -530,20 +513,14 @@ router.put("/update/:id", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /api/folder/delete/{id}/{itemId}:
+ * /api/folder/delete/item/{itemId}:
  *  delete:
- *    summary: Xóa 1 item tron folder
+ *    summary: Xóa 1 item trong folder
  *    tags: [Folders]
  *    security:
  *      - bearerAuth: []
  *    description: Xóa 1 folder theo Id
  *    parameters:
- *      - in: path
- *        name: id
- *        schema:
- *          type: string
- *        required: true
- *        description: Id của folder
  *      - in: path
  *        name: itemId
  *        schema:
@@ -564,7 +541,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
  *                message:
  *                  default: Xóa item thành công
  *      400:
- *        description: Id không tồn tại
+ *        description: Không tìm thấy folder nào chứa item này
  *        content:
  *          application/json:
  *            schema:
@@ -573,7 +550,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Id không tồn tại
+ *                  default: Không tìm thấy folder nào chứa item này
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -586,33 +563,26 @@ router.put("/update/:id", verifyToken, async (req, res) => {
  *                message:
  *                  default: Lỗi hệ thống
  */
-// @route DELETE api/folder/delete/:id/:itemId
+// @route DELETE api/folder/delete/item/:itemId
 // @desc Xóa 1 item trong folder
 // @access Private
-router.delete("/delete/:id/:itemId", verifyToken, async (req, res) => {
-  const id = req.params.id;
+router.delete("/delete/item/:itemId", verifyToken, async (req, res) => {
   const itemId = req.params.itemId;
 
   try {
-    const folder = await Folder.findById(id);
+    const folder = await Folder.findOne({ 'items._id': itemId })
     if (!folder) {
       return res
-        .status(400)
-        .json({ success: false, message: "Id Folder không tồn tại" });
-    }
-
+      .status(400)
+      .json({ success: false, message: "Không tìm thấy folder nào chứa item này" });
+    } 
     // Tìm vị trí của phần tử trong mảng `items` dựa trên `itemId`
     const itemIndex = folder.items.findIndex(item => item._id.toString() === itemId);
-    if (itemIndex === -1) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Id Item không tồn tại" });
-    }
 
     // Xóa phần tử khỏi mảng `items`
     folder.items.splice(itemIndex, 1);
 
-    // Lưu cập nhật của `Folder`
+    // // Lưu cập nhật của `Folder`
     await folder.save();
 
     res.status(200).json({ success: true, message: "Xóa item thành công" });
