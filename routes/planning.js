@@ -520,6 +520,14 @@ router.put("/update/:id", verifyToken, async (req, res) => {
       planningProject.plan.timeline[indexTimeline].deadline = deadline;
       planningProject.plan.timeline[indexTimeline].percentOfProject.weight =
         dateDifferent;
+      if (planningProject.plan.timeline[indexTimeline + 1]) {
+        planningProject.plan.timeline[
+          indexTimeline + 1
+        ].percentOfProject.weight = dateDiff(
+          deadline,
+          planningProject.plan.timeline[indexTimeline + 1].deadline
+        );
+      }
       percentStageOfProject(planningProject.plan.timeline);
 
       // Tính progress của project

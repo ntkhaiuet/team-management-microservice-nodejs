@@ -27,6 +27,7 @@ const ProjectSchema = new Schema(
             percent: { type: Number, default: 0 },
           },
           progress: { type: Number, default: 0 },
+          actual: { type: String, default: null },
         },
       ],
       createdAt: { type: String, default: onlyDate },

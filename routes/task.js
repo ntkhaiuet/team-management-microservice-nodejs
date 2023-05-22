@@ -9,6 +9,7 @@ const Project = require("../models/Project");
 const Task = require("../models/Task");
 const Notification = require("../models/Notification");
 const formattedDate = require("../middleware/formatDate");
+const onlyDate = require("../middleware/onlyDate");
 
 // Tính task chiếm bao nhiêu % của stage
 function percentTaskOfStage(task) {
@@ -563,7 +564,9 @@ router.put("/update/:id", verifyToken, async (req, res) => {
           taskId: task.id,
           userId: assignUser.id,
           content:
-            userAction.full_name + " đã assign task cho " + assignUser.full_name,
+            userAction.full_name +
+            " đã assign task cho " +
+            assignUser.full_name,
           type: "Assign",
         });
         notificationSave.push(notification);
@@ -617,6 +620,10 @@ router.put("/update/:id", verifyToken, async (req, res) => {
           (item) => item.stage === stage
         );
         project.plan.timeline[indexStage].progress = stageProgress;
+        // Cập nhật ngày hoàn thành stage
+        if (stageProgress === 1) {
+          project.plan.timeline[indexStage].actual = onlyDate;
+        }
 
         // Tính progress của project
         const projectProgress = project.plan.timeline.reduce((acc, curr) => {
@@ -792,6 +799,10 @@ router.delete("/delete/:id", verifyToken, async (req, res) => {
       (item) => item.stage === deleteTask.stage
     );
     project.plan.timeline[indexStage].progress = stageProgress;
+    // Cập nhật ngày hoàn thành stage
+    if (stageProgress === 1) {
+      project.plan.timeline[indexStage].actual = onlyDate;
+    }
 
     // Tính progress của project
     const projectProgress = project.plan.timeline.reduce((acc, curr) => {
