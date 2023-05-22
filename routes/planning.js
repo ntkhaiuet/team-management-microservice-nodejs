@@ -155,7 +155,7 @@ router.post("/create/:id", verifyToken, async (req, res) => {
     }
 
     // Nếu chưa từng tạo plan thì tạo trường plan trong project
-    if (topic && target && planningProject.plan.timeline.length === 0) {
+    if ((topic || target) && planningProject.plan.timeline.length === 0) {
       // Tính khoảng cách giữa ngày tạo kế hoạch và deadline
       const dateDifferent = dateDiff(onlyDate, deadline);
 
@@ -171,6 +171,7 @@ router.post("/create/:id", verifyToken, async (req, res) => {
             percent: 1,
           },
         },
+        createdAt: onlyDate,
       };
       planningProject.plan = plan;
     }
