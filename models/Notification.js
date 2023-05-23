@@ -10,7 +10,7 @@ const NotificationSchema = new Schema(
     taskId: { type: Schema.Types.ObjectId, ref: "Task" },
     content: { type: String, required: true },
     status: { type: String, enum: ["Read", "Unread"], default: "Unread" },
-    type: { type: String, enum: ["Assign", "Other"], default: "Other" },
+    type: { type: String, enum: ["Assign", "Other", "Invite"], default: "Other" },
     createdAt: { type: String, default: Date.now() },
   },
   {

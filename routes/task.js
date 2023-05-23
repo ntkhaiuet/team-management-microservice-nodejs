@@ -505,11 +505,13 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     let userAction = await User.findById(req.userId);
     let notificationSave = [];
     let commentUsers = [];
+    
     if (!task) {
       return res
         .status(400)
         .json({ success: false, message: "Id của task không đúng" });
     }
+    let project = await Project.findById(task.projectId)
 
     if (req.body.stage) {
       const existingProject = await Project.findById(task.projectId);
@@ -564,9 +566,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
           taskId: task.id,
           userId: assignUser.id,
           content:
-            userAction.full_name +
-            " đã assign task cho " +
-            assignUser.full_name,
+            userAction.full_name + " đã assign task" + task.title + " thuộc project" + project.name + " cho bạn ",
           type: "Assign",
         });
         notificationSave.push(notification);
@@ -596,7 +596,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         projectId: task.projectId,
         taskId: task.id,
         userId: req.userId,
-        content: userAction.full_name + " đã thay đổi trạng thái của task ",
+        content: userAction.full_name + " đã thay đổi trạng thái của task" + task.title + " thuộc project" + project.name,
       });
       notificationSave.push(notification);
 
@@ -651,7 +651,7 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         projectId: task.projectId,
         taskId: task.id,
         userId: req.userId,
-        content: userAction.full_name + " đã comment trong task ",
+        content: userAction.full_name + " đã comment trong task" + task.title + " thuộc project" + project.name,
       });
       notificationSave.push(notification);
       const existingCommentUser = task.commentUsers.find(
