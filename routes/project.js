@@ -6,6 +6,7 @@ const User = require("../models/User");
 const Project = require("../models/Project");
 const ProjectInvite = require("../models/ProjectInvite");
 const Task = require("../models/Task");
+const Notification = require("../models/Notification");
 
 /**
  * @swagger
@@ -1080,6 +1081,18 @@ router.put("/:id/invite", verifyToken, async (req, res) => {
         success: false,
         message: "Địa chỉ email này đã được mời vào dự án",
       });
+    }
+    const userInvite = await User.findOne({ email: email })
+    const user = await User.findById(req.userId)
+    if (userInvite.id !== req.userId) {
+      const notification = new Notification({
+        projectId: projectId,
+        userId: userInvite.id,
+        content:
+        user.full_name + " đã mời bạn vào project " + project.name,
+        type: "Invite",
+      });
+      await notification.save()
     }
     projectInvite.users.push({ email: email, role: role, status: "Waiting" });
 
