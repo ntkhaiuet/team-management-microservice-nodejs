@@ -46,32 +46,7 @@ const Notification = require("../models/Notification");
  *                    listNotification:
  *                      type: array
  *                      items:
- *                        type: object
- *                        properties:
- *                          _id:
- *                            type: string
- *                            default: "645f52610b1c537149660ee0"
- *                          projectId:
- *                            type: string
- *                            default: "64340d4cf69cad6d56eb26ce"
- *                          userId:
- *                            type: string
- *                            default: "643442332d3f6e66f09668fa"
- *                          taskId:
- *                            type: string
- *                            default: "64455f793105cb6f4550435a"
- *                          content:
- *                            type: string
- *                            default: "Ngoc đã assign task cho Ngoc"
- *                          status:
- *                            type: string
- *                            default: "Unread"
- *                          type:
- *                            type: string
- *                            default: "Assign"
- *                          createdAt:
- *                            type: string
- *                            default: "16:00:11 13/05/2023"
+ *                        $ref: '#/components/schemas/Notification'
  *                    countUnread:
  *                      type: integer
  *                      default: 1
@@ -98,6 +73,126 @@ const Notification = require("../models/Notification");
  *                message:
  *                  default: Lỗi hệ thống
  */
+
+/** 
+*  @swagger
+*  components:
+*  schemas:
+*    Notification:
+*        oneOf:
+*          - $ref: '#/components/schemas/Notification1'
+*          - $ref: '#/components/schemas/Notification2'
+*          - $ref: '#/components/schemas/Notification3'
+*          - $ref: '#/components/schemas/Notification4'
+*    Notification1:
+*      type: object
+*      properties:
+*        _id:
+*          type: string
+*          default: "645f52610b1c537149660ee0"
+*        projectId:
+*          type: string
+*          default: "64340d4cf69cad6d56eb26ce"
+*        userId:
+*          type: string
+*          default: "643442332d3f6e66f09668fa"
+*        taskId:
+*          type: string
+*          default: "64455f793105cb6f4550435a"
+*        content:
+*          type: string
+*          default: "Ngoc đã assign task task1 thuộc project MyProject3+1 cho bạn"
+*        status:
+*          type: string
+*          default: "Unread"
+*        type:
+*          type: string
+*          default: "Assign"
+*        createdAt:
+*          type: string
+*          default: "16:00:11 13/05/2023"
+*    Notification2:
+*      type: object
+*      properties:
+*        _id:
+*          type: string
+*          default: "645f52610b1c537149660ee0"
+*        projectId:
+*          type: string
+*          default: "64340d4cf69cad6d56eb26ce"
+*        userId:
+*          type: string
+*          default: "643442332d3f6e66f09668fa"
+*        taskId:
+*          type: string
+*          default: "64455f793105cb6f4550435a"
+*        content:
+*          type: string
+*          default: "Ngoc đã thay đổi trạng thái của task task1 thuộc project MyProject3+1"
+*        status:
+*          type: string
+*          default: "Unread"
+*        type:
+*          type: string
+*          default: "Assign"
+*        createdAt:
+*          type: string
+*          default: "16:00:11 13/05/2023"
+*    Notification3:
+*      type: object
+*      properties:
+*        _id:
+*          type: string
+*          default: "645f52610b1c537149660ee0"
+*        projectId:
+*          type: string
+*          default: "64340d4cf69cad6d56eb26ce"
+*        userId:
+*          type: string
+*          default: "643442332d3f6e66f09668fa"
+*        taskId:
+*          type: string
+*          default: "64455f793105cb6f4550435a"
+*        content:
+*          type: string
+*          default: "Ngoc đã comment vào task task1 thuộc project MyProject3+1 cho bạn"
+*        status:
+*          type: string
+*          default: "Unread"
+*        type:
+*          type: string
+*          default: "Assign"
+*        createdAt:
+*          type: string
+*          default: "16:00:11 13/05/2023"
+*    Notification4:
+*      type: object
+*      properties:
+*        _id:
+*          type: string
+*          default: "645f52610b1c537149660ee0"
+*        projectId:
+*          type: string
+*          default: "64340d4cf69cad6d56eb26ce"
+*        userId:
+*          type: string
+*          default: "643442332d3f6e66f09668fa"
+*        taskId:
+*          type: string
+*          default: "64455f793105cb6f4550435a"
+*        content:
+*          type: string
+*          default: "Ngoc đã mời bạn vào project MyProject"
+*        status:
+*          type: string
+*          default: "Unread"
+*        type:
+*          type: string
+*          default: "Assign"
+*        createdAt:
+*          type: string
+*          default: "16:00:11 13/05/2023"
+*/
 
 // @route GET api/notification/list
 // @access Private
