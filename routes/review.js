@@ -7,6 +7,7 @@ const Review = require("../models/Review");
 const User = require("../models/User");
 const Project = require("../models/Project");
 const Task = require("../models/Task");
+const formattedDate = require("../middleware/formatDate");
 
 /**
  * @swagger
@@ -19,11 +20,11 @@ const Task = require("../models/Task");
  * @swagger
  * /api/review/create:
  *  post:
- *    summary: Tạo 1 review (review là bắt buộc, score có thể không, truyền taskId nếu đánh giá task, truyền projectId nếu đánh giá project)
+ *    summary: Tạo đánh giá
  *    tags: [Reviews]
  *    security:
  *      - bearerAuth: []
- *    description: Tạo 1 review (review là bắt buộc, score có thể không, truyền taskId nếu đánh giá task, truyền projectId nếu đánh giá project)
+ *    description: Tạo đánh giá
  *    requestBody:
  *      required: true
  *      content:
@@ -31,17 +32,17 @@ const Task = require("../models/Task");
  *          schema:
  *            type: object
  *            properties:
+ *              projectId:
+ *                default: 646cf96851c0950a40e48068
+ *              member:
+ *                default: ntkhaiuet@gmail.com
  *              review:
  *                default: "Hoàn thành tốt"
  *              score:
  *                default: 9
- *              projectId:
- *                default: 64340d4cf69cad6d56eb26ce
- *              taskId:
- *                default: 64340d4cf69cad6d56eb26ce
  *    responses:
  *      200:
- *        description: Tạo review thành công
+ *        description: Tạo đánh giá thành công
  *        content:
  *          application/json:
  *            schema:
@@ -50,17 +51,25 @@ const Task = require("../models/Task");
  *                success:
  *                  default: true
  *                message:
- *                  default: Tạo review thành công
+ *                  default: Tạo đánh giá thành công
  *                review:
  *                  default: {
- *                    "projectId": 64340d4cf69cad6d56eb26ce,
- *                    "taskId": null,
+ *                    "projectId": "646cf96851c0950a40e48068",
+ *                    "member": {
+ *                      "full_name": "ntkhaiuet",
+ *                      "email": "ntkhaiuet@gmail.com"
+ *                    },
+ *                    "reviewer": {
+ *                      "full_name": "sheissocute",
+ *                      "email": "sheissocute2001@gmail.com"
+ *                    },
  *                    "review": "Hoàn thành tốt",
  *                    "score": 9,
- *                    "createdAt": "01:27:38 18/05/2023"
+ *                    "lastModifiedAt": "01:51:37 24/05/2023",
+ *                    "_id": "646d0b4219e942ce3f0e81a4"
  *                  }
  *      400:
- *        description: Vui lòng nhập review và projectId hoặc taskId/Vui lòng chỉ nhập 1 trong 2 trường projectId, taskId/User không tồn tại/Task không tồn tại/Review đã tồn tại/Project không tồn tại/Người dùng không có quyền đánh giá
+ *        description: Project không tồn tại/User không có quyền đánh giá/User được đánh giá không tồn tại hoặc là Reviewer/User không tồn tại/Review đã tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -69,7 +78,7 @@ const Task = require("../models/Task");
  *                success:
  *                  default: false
  *                message:
- *                  default: Vui lòng nhập review và projectId hoặc taskId/Vui lòng chỉ nhập 1 trong 2 trường projectId, taskId/User không tồn tại/Task không tồn tại/Review đã tồn tại/Project không tồn tại/Người dùng không có quyền đánh giá
+ *                  default: Project không tồn tại/User không có quyền đánh giá/User được đánh giá không tồn tại hoặc là Reviewer/User không tồn tại/Review đã tồn tại
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -86,113 +95,86 @@ const Task = require("../models/Task");
 // @desc Tạo đánh giá
 // @access Private
 router.post("/create", verifyToken, async (req, res) => {
-  const { review, score, projectId, taskId } = req.body;
-
-  //   Kiểm tra review và projectId/taskId tồn tại
-  if (!review || (!projectId && !taskId)) {
-    return res.status(400).json({
-      success: false,
-      message: "Vui lòng nhập review và projectId hoặc taskId",
-    });
-  }
-
-  // Kiểm tra xem có nhập cả projectId và taskId không
-  if (projectId && taskId) {
-    return res.status(400).json({
-      success: false,
-      message: "Vui lòng chỉ nhập 1 trong 2 trường projectId, taskId",
-    });
-  }
+  const { projectId, member, review, score } = req.body;
 
   try {
-    let projectIdByTask;
-
-    // Lấy projectId nếu là đánh giá task
-    if (taskId) {
-      const [task, checkReview] = await Promise.all([
-        Task.findById(taskId),
-        Review.findOne({ taskId: taskId }),
-      ]);
-      if (!task) {
-        return res.status(400).json({
-          success: false,
-          message: "Task không tồn tại",
-        });
-      }
-      projectIdByTask = task.projectId;
-
-      // Kiểm tra task được đánh giá chưa
-      if (checkReview) {
-        return res.status(400).json({
-          success: false,
-          message: "Review đã tồn tại",
-        });
-      }
-    }
-
-    if (projectId) {
-      const checkReview = await Review.findOne({ projectId: projectId });
-      // Kiểm tra task được đánh giá chưa
-      if (checkReview) {
-        return res.status(400).json({
-          success: false,
-          message: "Review đã tồn tại",
-        });
-      }
-    }
-
-    const [user, project] = await Promise.all([
+    const [project, user, checkReview, memberInfo] = await Promise.all([
+      Project.findById(projectId),
       User.findById(req.userId),
-      Project.findById(projectId || projectIdByTask),
+      Review.findOne({
+        projectId: projectId,
+        "reviewer.email": req.userEmail,
+        "member.email": member,
+      }),
+      User.findOne({ email: member }),
     ]);
-
-    // Kiểm tra user tồn tại
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "User không tồn tại",
-      });
-    }
 
     // Kiểm tra project tồn tại
     if (!project) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Project không tồn tại" });
+    }
+
+    const users = project.users;
+
+    // Kiểm tra quyền user
+    const checkRole = users.some(
+      (user) => user.email === req.userEmail && user.role === "Reviewer"
+    );
+    if (!checkRole) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User không có quyền đánh giá" });
+    }
+
+    // Kiểm tra user được đánh giá
+    const checkMember = users.some(
+      (user) =>
+        user.email === member &&
+        (user.role === "Member" || user.role === "Leader")
+    );
+    if (!checkMember) {
       return res.status(400).json({
         success: false,
-        message: "Project không tồn tại",
+        message: "User được đánh giá không tồn tại hoặc là Reviewer",
       });
     }
 
-    //   Kiểm tra người dùng có phải reviewer không
-    const isReviewer = project.users.find((user) => {
-      return user.email === req.userEmail && user.role === "Reviewer";
+    // Kiểm tra user tồn tại
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User không tồn tại" });
+    }
+
+    // Kiểm tra review tồn tại
+    if (checkReview) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Review đã tồn tại" });
+    }
+
+    const newReview = new Review({
+      projectId: projectId,
+      member: {
+        full_name: memberInfo.full_name,
+        email: member,
+      },
+      reviewer: {
+        full_name: req.userFullName,
+        email: req.userEmail,
+      },
+      review: review,
+      score: score,
+      lastModifiedAt: formattedDate,
     });
-    if (!isReviewer) {
-      return res.status(400).json({
-        success: false,
-        message: "Người dùng không có quyền đánh giá",
-      });
-    }
 
-    // Tạo bản ghi review
-    let newReview;
-    if (projectId) {
-      newReview = new Review({
-        projectId: projectId,
-        review: review,
-        score: score || null,
-      });
-    } else {
-      newReview = new Review({
-        taskId: taskId,
-        review: review,
-        score: score || null,
-      });
-    }
     newReview.save();
 
     res.status(200).json({
       success: true,
-      message: "Tạo review thành công",
+      message: "Tạo đánh giá thành công",
       review: newReview,
     });
   } catch (error) {
@@ -203,23 +185,23 @@ router.post("/create", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /api/review/read/{taskorprojectid}:
+ * /api/review/list/{projectId}:
  *  get:
- *    summary: Nhận thông tin đánh giá (truyền vào taskId hoặc projectId)
+ *    summary: Nhận danh sách đánh giá của project
  *    tags: [Reviews]
  *    security:
  *      - bearerAuth: []
- *    description: Nhận thông tin đánh giá (truyền vào taskId hoặc projectId)
+ *    description: Nhận danh sách đánh giá của project
  *    parameters:
  *      - in: path
- *        name: taskorprojectid
+ *        name: projectId
  *        schema:
  *          type: string
  *        required: true
- *        description: ID của task hoặc ID của project
+ *        description: ID của project
  *    responses:
  *      200:
- *        description: Nhận thông tin review thành công
+ *        description: Nhận danh sách đánh giá thành công
  *        content:
  *          application/json:
  *            schema:
@@ -228,17 +210,27 @@ router.post("/create", verifyToken, async (req, res) => {
  *                success:
  *                  default: true
  *                message:
- *                  default: Nhận thông tin review thành công
+ *                  default: Nhận danh sách đánh giá thành công
  *                review:
- *                  default: {
- *                    "projectId": "6464f03f84a8c1589f49a007",
- *                    "taskId": null,
- *                    "review": "Hoàn thành tốt",
- *                    "score": 9,
- *                    "createdAt": "22:26:26 17/05/2023"
- *                  }
+ *                  default: [
+ *                    {
+ *                      "member": {
+ *                        "full_name": "ntkhaiuet",
+ *                        "email": "ntkhaiuet@gmail.com"
+ *                      },
+ *                      "reviewer": {
+ *                        "full_name": "sheissocute",
+ *                        "email": "sheissocute2001@gmail.com"
+ *                      },
+ *                      "_id": "646d0b4219e942ce3f0e81a4",
+ *                      "projectId": "646cf96851c0950a40e48068",
+ *                      "review": "Hoàn thành tốt",
+ *                      "score": 9,
+ *                      "lastModifiedAt": "01:51:37 24/05/2023"
+ *                    }
+ *                  ]
  *      400:
- *        description: User không tồn tại hoặc user không thuộc project
+ *        description: Project không tồn tại/User không tồn tại hoặc không thuộc project/Không tìm thấy đánh giá nào
  *        content:
  *          application/json:
  *            schema:
@@ -247,7 +239,7 @@ router.post("/create", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: User không tồn tại hoặc user không thuộc project
+ *                  default: Project không tồn tại/User không tồn tại hoặc không thuộc project/Không tìm thấy đánh giá nào
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -260,42 +252,45 @@ router.post("/create", verifyToken, async (req, res) => {
  *                message:
  *                  default: Lỗi hệ thống
  */
-// @route GET api/review/read/:taskorprojectid
-// @desc Nhận thông tin đánh giá
+// @route GET api/review/list/:projectId
+// @desc Nhận danh sách đánh giá của project
 // @access Private
-router.get("/read/:taskorprojectid", verifyToken, async (req, res) => {
-  const taskOrProjectId = req.params.taskorprojectid;
+router.get("/list/:projectId", verifyToken, async (req, res) => {
+  const projectId = req.params.projectId;
 
   try {
-    let projectIdByTask;
-    // Kiểm tra taskOrProjectId xem có phải id của task không
-    const task = await Task.findById(taskOrProjectId);
-    if (task) {
-      projectIdByTask = task.projectId;
+    const [project, user] = await Promise.all([
+      Project.findById(projectId),
+      User.findOne({ _id: req.userId, "projects.project": projectId }),
+    ]);
+
+    // Kiểm tra project tồn tại
+    if (!project) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Project không tồn tại" });
     }
 
-    // Kiểm tra user tồn tại và thuộc project
-    const user = await User.findOne({
-      _id: req.userId,
-      "projects.project": projectIdByTask || taskOrProjectId,
-    });
+    // Kiểm tra user tồn tại
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "User không tồn tại hoặc user không thuộc project",
+        message: "User không tồn tại hoặc không thuộc project",
       });
     }
 
-    let review;
-    if (projectIdByTask) {
-      review = await Review.findOne({ taskId: taskOrProjectId });
-    } else {
-      review = await Review.findOne({ projectId: taskOrProjectId });
+    const review = await Review.find({ projectId: projectId });
+
+    if (review.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Không tìm thấy đánh giá nào",
+      });
     }
 
     res.status(200).json({
       success: true,
-      message: "Nhận thông tin review thành công",
+      message: "Nhận danh sách đánh giá thành công",
       review: review,
     });
   } catch (error) {
@@ -306,20 +301,20 @@ router.get("/read/:taskorprojectid", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /api/review/update/{taskorprojectid}:
+ * /api/review/update/{id}:
  *  put:
- *    summary: Cập nhật thông tin đánh giá
+ *    summary: Chỉnh sửa 1 đánh giá
  *    tags: [Reviews]
  *    security:
  *      - bearerAuth: []
- *    description: Cập nhật thông tin đánh giá
+ *    description: Chỉnh sửa 1 đánh giá
  *    parameters:
  *      - in: path
- *        name: taskorprojectid
+ *        name: id
  *        schema:
  *          type: string
  *        required: true
- *        description: ID của task hoặc ID của project
+ *        description: ID của đánh giá
  *    requestBody:
  *      required: true
  *      content:
@@ -328,12 +323,12 @@ router.get("/read/:taskorprojectid", verifyToken, async (req, res) => {
  *            type: object
  *            properties:
  *              review:
- *                default: Sửa nội dung review
+ *                default: "Hoàn thành tốt"
  *              score:
- *                default: 10
+ *                default: 9
  *    responses:
  *      200:
- *        description: Chỉnh sửa thông tin review thành công
+ *        description: Chỉnh sửa đánh giá thành công
  *        content:
  *          application/json:
  *            schema:
@@ -342,9 +337,25 @@ router.get("/read/:taskorprojectid", verifyToken, async (req, res) => {
  *                success:
  *                  default: true
  *                message:
- *                  default: Chỉnh sửa thông tin review thành công
+ *                  default: Chỉnh sửa đánh giá thành công
+ *                review:
+ *                  default: {
+ *                    "member": {
+ *                      "full_name": "ntkhaiuet",
+ *                      "email": "ntkhaiuet@gmail.com"
+ *                    },
+ *                    "reviewer": {
+ *                      "full_name": "sheissocute",
+ *                      "email": "sheissocute2001@gmail.com"
+ *                    },
+ *                    "_id": "646d0b4219e942ce3f0e81a4",
+ *                    "projectId": "646cf96851c0950a40e48068",
+ *                    "review": "Hoàn thành rất tốt",
+ *                    "score": 10,
+ *                    "lastModifiedAt": "02:31:30 24/05/2023"
+ *                  }
  *      400:
- *        description: Vui lòng nhập review hoặc score/User không tồn tại/Người dùng không có quyền chỉnh sửa đánh giá
+ *        description: Vui lòng nhập review hoặc score/Id của đánh giá không đúng/Project không tồn tại/User không có quyền chỉnh sửa đánh giá/User không tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -353,7 +364,7 @@ router.get("/read/:taskorprojectid", verifyToken, async (req, res) => {
  *                success:
  *                  default: false
  *                message:
- *                  default: Vui lòng nhập review hoặc score/User không tồn tại/Người dùng không có quyền chỉnh sửa đánh giá
+ *                  default: Vui lòng nhập review hoặc score/Id của đánh giá không đúng/Project không tồn tại/User không có quyền chỉnh sửa đánh giá/User không tồn tại
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -366,84 +377,71 @@ router.get("/read/:taskorprojectid", verifyToken, async (req, res) => {
  *                message:
  *                  default: Lỗi hệ thống
  */
-// @route PUT api/review/update/:taskorprojectid
-// @desc Cập nhật thông tin đánh giá
+// @route PUT api/review/update/:id
+// @desc Chỉnh sửa 1 đánh giá
 // @access Private
-router.put("/update/:taskorprojectid", verifyToken, async (req, res) => {
-  const taskOrProjectId = req.params.taskorprojectid;
+router.put("/update/:id", verifyToken, async (req, res) => {
+  const id = req.params.id;
   const { review, score } = req.body;
 
-  let updateFields = {};
-
-  if (review) {
-    updateFields.review = review;
-  }
-
-  if (score) {
-    updateFields.score = score;
-  }
-
-  //   Kiểm tra review/score tồn tại
-  if (!review && !score) {
-    return res.status(400).json({
-      success: false,
-      message: "Vui lòng nhập review hoặc score",
-    });
+  if (!review || !score) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Vui lòng nhập review hoặc score" });
   }
 
   try {
-    let projectIdByTask;
+    const updateReview = await Review.findById(id);
 
-    const [task, user] = await Promise.all([
-      Task.findById(taskOrProjectId),
+    // Kiểm tra review tồn tại
+    if (!updateReview) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Id của đánh giá không đúng" });
+    }
+
+    const [project, user] = await Promise.all([
+      Project.findById(updateReview.projectId),
       User.findById(req.userId),
     ]);
 
-    // Kiểm tra taskOrProjectId xem có phải id của task không
-    if (task) {
-      projectIdByTask = task.projectId.toString();
+    // Kiểm tra project tồn tại
+    if (!project) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Project không tồn tại" });
     }
 
-    // Kiểm tra user tồn tại và là Reviewer của project
+    const users = project.users;
+
+    // Kiểm tra quyền user
+    const checkRole = users.some(
+      (user) => user.email === req.userEmail && user.role === "Reviewer"
+    );
+    if (!checkRole) {
+      return res.status(400).json({
+        success: false,
+        message: "User không có quyền chỉnh sửa đánh giá",
+      });
+    }
+
+    // Kiểm tra user tồn tại
     if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "User không tồn tại",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "User không tồn tại" });
     }
 
-    //   Kiểm tra người dùng có phải reviewer không
-    const isReviewer = user.projects.find((element) => {
-      return (
-        element.project == (projectIdByTask || taskOrProjectId) &&
-        element.role === "Reviewer"
-      );
-    });
-    if (!isReviewer) {
-      return res.status(400).json({
-        success: false,
-        message: "Người dùng không có quyền chỉnh sửa đánh giá",
-      });
-    }
+    // Cập nhật đánh giá
+    updateReview.review = review;
+    updateReview.score = score;
+    updateReview.lastModifiedAt = formattedDate;
 
-    let updateReview;
-    if (projectIdByTask) {
-      updateReview = await Review.findOneAndUpdate(
-        { taskId: taskOrProjectId },
-        updateFields,
-        { new: true }
-      );
-    } else {
-      updateReview = await Review.findOneAndUpdate(
-        { projectId: taskOrProjectId },
-        updateFields,
-        { new: true }
-      );
-    }
+    updateReview.save();
 
     res.status(200).json({
       success: true,
-      message: "Chỉnh sửa thông tin review thành công",
+      message: "Chỉnh sửa đánh giá thành công",
       review: updateReview,
     });
   } catch (error) {

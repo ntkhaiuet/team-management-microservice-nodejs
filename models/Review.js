@@ -5,11 +5,18 @@ const formattedDate = require("../middleware/formatDate");
 
 const ReviewSchema = new Schema(
   {
-    projectId: { type: Schema.Types.ObjectId, ref: "Project", default: null },
-    taskId: { type: Schema.Types.ObjectId, ref: "Task", default: null },
+    projectId: { type: Schema.Types.ObjectId, ref: "Project" },
+    member: {
+      full_name: { type: String },
+      email: { type: String },
+    },
+    reviewer: {
+      full_name: { type: String },
+      email: { type: String },
+    },
     review: { type: String, required: true },
     score: { type: Number, default: null },
-    createdAt: { type: String, default: formattedDate },
+    lastModifiedAt: { type: String, default: formattedDate },
   },
   {
     versionKey: false,
