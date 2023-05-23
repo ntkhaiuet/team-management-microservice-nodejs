@@ -138,8 +138,9 @@ router.get("/list", verifyToken, async function (req, res) {
     
     const taskIds = commentTask.map(task => task._id);
     const listNotifyAssign = await Notification.find({type: 'Assign', userId: userId }).sort({ createdAt: -1 });
+    const listNotifyInvite = await Notification.find({type: 'Invite', userId: userId }).sort({ createdAt: -1 });
     // const listNotifyComment = await Notification.find({ taskId: { $in: taskIds }, type: 'Other', userId: { $ne: userId } }).sort({ createdAt: -1 });
-    userNotifications = listNotifyAssign.concat(...listNotifyComment);
+    userNotifications = listNotifyAssign.concat(listNotifyInvite, ...listNotifyComment);
     userNotifications.forEach((notification) => {
       const unixTime = notification.createdAt
       const fomrattedTime = formatUnixTime(+unixTime);
