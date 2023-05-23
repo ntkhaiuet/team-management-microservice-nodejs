@@ -134,7 +134,7 @@ const Notification = require("../models/Notification");
 *          default: "Unread"
 *        type:
 *          type: string
-*          default: "Assign"
+*          default: "Comment"
 *        createdAt:
 *          type: string
 *          default: "16:00:11 13/05/2023"
@@ -161,7 +161,7 @@ const Notification = require("../models/Notification");
 *          default: "Unread"
 *        type:
 *          type: string
-*          default: "Assign"
+*          default: "Comment"
 *        createdAt:
 *          type: string
 *          default: "16:00:11 13/05/2023"
@@ -188,7 +188,7 @@ const Notification = require("../models/Notification");
 *          default: "Unread"
 *        type:
 *          type: string
-*          default: "Assign"
+*          default: "Invite"
 *        createdAt:
 *          type: string
 *          default: "16:00:11 13/05/2023"
