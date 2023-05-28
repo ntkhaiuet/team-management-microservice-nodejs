@@ -194,22 +194,6 @@ router.post("/create", verifyToken, async (req, res) => {
         .status(400)
         .json({ success: false, message: "Assign không tồn tại" });
     } 
-      if (assignUser.id !== req.userId) {
-        const notification = new Notification({
-          projectId: task.projectId,
-          taskId: task.id,
-          userId: assignUser.id,
-          content:
-            user.full_name +
-            " đã assign task " +
-            title +
-            " thuộc project " +
-            checkProject  .name +
-            " cho bạn ",
-          type: "Assign",
-        });
-        await notification.save()
-      }
     // Tạo task mới
     const newTask = new Task({
       projectId: project,
@@ -237,6 +221,22 @@ router.post("/create", verifyToken, async (req, res) => {
       progress: 0,
     });
     await newTask.save();
+    if (assignUser.id !== req.userId) {
+      const notification = new Notification({
+        projectId: task.projectId,
+        taskId: newTask.id,
+        userId: assignUser.id,
+        content:
+          user.full_name +
+          " đã assign task " +
+          title +
+          " thuộc project " +
+          checkProject  .name +
+          " cho bạn ",
+        type: "Assign",
+      });
+      await notification.save()
+    }
     const taskWithStage = await Task.find({
       projectId: project,
       stage: stage,
