@@ -228,13 +228,21 @@ router.post("/create", verifyToken, async (req, res) => {
     });
 
     // Thêm user vào tập các user được mời của project
-    listUserInvite.forEach((element) => {
+    listUserInvite.forEach(async (element) => {
       projectInvite.users.push({
         email: element.email,
         role: element.role,
         status: "Waiting",
       });
-    });
+      const userInvite = await User.findOne({ email:element.email })
+      const notification = new Notification({
+        projectId: project._id,
+        userId: userInvite.id,
+        content: user.full_name + " đã mời bạn vào project " + project.name,
+        type: "Invite",
+      });
+      await notification.save();
+    }); 
 
     await Promise.all([user.save(), projectInvite.save(), project.save()]);
 

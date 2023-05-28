@@ -38,6 +38,7 @@ const TaskSchema = new Schema(
     commentUsers: [
       { 
         userId: {type: Schema.Types.ObjectId, ref: "User" },
+        type: {type:String, enum:["Assign", "Comment"], default: "Comment"},
         commentAt: { type: Number, default: Date.now() }
       },
     ]
