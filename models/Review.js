@@ -6,6 +6,7 @@ const formattedDate = require("../middleware/formatDate");
 const ReviewSchema = new Schema(
   {
     projectId: { type: Schema.Types.ObjectId, ref: "Project" },
+    isProjectReview: { type: Boolean, default: false },
     member: {
       full_name: { type: String },
       email: { type: String },

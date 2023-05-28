@@ -69,7 +69,7 @@ const formattedDate = require("../middleware/formatDate");
  *                    "_id": "646d0b4219e942ce3f0e81a4"
  *                  }
  *      400:
- *        description: Project không tồn tại/User không có quyền đánh giá/User được đánh giá không tồn tại hoặc là Reviewer/User không tồn tại/Review đã tồn tại
+ *        description: Vui lòng nhập projectId, member và review hoặc score/Project không tồn tại/User không có quyền đánh giá/User được đánh giá không tồn tại hoặc là Reviewer/User không tồn tại/Review đã tồn tại
  *        content:
  *          application/json:
  *            schema:
@@ -78,7 +78,7 @@ const formattedDate = require("../middleware/formatDate");
  *                success:
  *                  default: false
  *                message:
- *                  default: Project không tồn tại/User không có quyền đánh giá/User được đánh giá không tồn tại hoặc là Reviewer/User không tồn tại/Review đã tồn tại
+ *                  default: Vui lòng nhập projectId, member và review hoặc score/Project không tồn tại/User không có quyền đánh giá/User được đánh giá không tồn tại hoặc là Reviewer/User không tồn tại/Review đã tồn tại
  *      500:
  *        description: Lỗi hệ thống
  *        content:
@@ -97,6 +97,13 @@ const formattedDate = require("../middleware/formatDate");
 router.post("/create", verifyToken, async (req, res) => {
   const { projectId, member, review, score } = req.body;
 
+  if (!projectId || !member || (!review && !score)) {
+    return res.status(400).json({
+      success: false,
+      message: "Vui lòng nhập projectId, member và review hoặc score",
+    });
+  }
+
   try {
     const [project, user, checkReview, memberInfo] = await Promise.all([
       Project.findById(projectId),
@@ -114,6 +121,13 @@ router.post("/create", verifyToken, async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Project không tồn tại" });
+    }
+
+    // Kiểm tra user tồn tại
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User không tồn tại" });
     }
 
     const users = project.users;
@@ -139,13 +153,6 @@ router.post("/create", verifyToken, async (req, res) => {
         success: false,
         message: "User được đánh giá không tồn tại hoặc là Reviewer",
       });
-    }
-
-    // Kiểm tra user tồn tại
-    if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User không tồn tại" });
     }
 
     // Kiểm tra review tồn tại
@@ -185,6 +192,145 @@ router.post("/create", verifyToken, async (req, res) => {
 
 /**
  * @swagger
+ * /api/review/project/create:
+ *  post:
+ *    summary: Tạo đánh giá cho project
+ *    tags: [Reviews]
+ *    security:
+ *      - bearerAuth: []
+ *    description: Tạo đánh giá
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              projectId:
+ *                default: 646cf96851c0950a40e48068
+ *              review:
+ *                default: "Hoàn thành tốt"
+ *              score:
+ *                default: 9
+ *    responses:
+ *      200:
+ *        description: Tạo đánh giá project thành công
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Tạo đánh giá project thành công
+ *      400:
+ *        description: Vui lòng nhập projectId và review hoặc score/Project không tồn tại/User không tồn tại/User không có quyền đánh giá/Review đã tồn tại
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Vui lòng nhập projectId và review hoặc score/Project không tồn tại/User không tồn tại/User không có quyền đánh giá/Review đã tồn tại
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Lỗi hệ thống
+ */
+// @route POST api/review/project/create
+// @desc Tạo đánh giá cho project
+// @access Private
+router.post("/project/create", verifyToken, async (req, res) => {
+  const { projectId, review, score } = req.body;
+
+  if (!projectId || (!review && !score)) {
+    return res.status(400).json({
+      success: false,
+      message: "Vui lòng nhập projectId và review hoặc score",
+    });
+  }
+
+  try {
+    const [project, user, checkReview] = await Promise.all([
+      Project.findById(projectId),
+      User.findById(req.userId),
+      Review.findOne({
+        projectId: projectId,
+        "reviewer.email": req.userEmail,
+        isProjectReview: true,
+      }),
+    ]);
+
+    // Kiểm tra project tồn tại
+    if (!project) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Project không tồn tại" });
+    }
+
+    // Kiểm tra user tồn tại
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User không tồn tại" });
+    }
+
+    const users = project.users;
+
+    // Kiểm tra quyền user
+    const checkRole = users.some(
+      (user) => user.email === req.userEmail && user.role === "Reviewer"
+    );
+    if (!checkRole) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User không có quyền đánh giá" });
+    }
+
+    // Kiểm tra review tồn tại
+    if (checkReview) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Review đã tồn tại" });
+    }
+
+    const newReview = new Review({
+      projectId: projectId,
+      isProjectReview: true,
+      reviewer: {
+        full_name: req.userFullName,
+        email: req.userEmail,
+      },
+      review: review,
+      score: score,
+      lastModifiedAt: formattedDate,
+    });
+
+    newReview.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Tạo đánh giá project thành công",
+      review: newReview,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+});
+
+/**
+ * @swagger
  * /api/review/list/{projectId}:
  *  get:
  *    summary: Nhận danh sách đánh giá của project
@@ -212,23 +358,40 @@ router.post("/create", verifyToken, async (req, res) => {
  *                message:
  *                  default: Nhận danh sách đánh giá thành công
  *                review:
- *                  default: [
- *                    {
- *                      "member": {
- *                        "full_name": "ntkhaiuet",
- *                        "email": "ntkhaiuet@gmail.com"
- *                      },
- *                      "reviewer": {
- *                        "full_name": "sheissocute",
- *                        "email": "sheissocute2001@gmail.com"
- *                      },
- *                      "_id": "646d0b4219e942ce3f0e81a4",
- *                      "projectId": "646cf96851c0950a40e48068",
- *                      "review": "Hoàn thành tốt",
- *                      "score": 9,
- *                      "lastModifiedAt": "01:51:37 24/05/2023"
- *                    }
- *                  ]
+ *                  default: {
+ *                    "project": [
+ *                      {
+ *                        "reviewer": {
+ *                          "full_name": "sheissocute",
+ *                          "email": "sheissocute2001@gmail.com"
+ *                        },
+ *                        "_id": "6472eb6d6d6dd888ac63db2e",
+ *                        "projectId": "646cf96851c0950a40e48068",
+ *                        "isProjectReview": true,
+ *                        "review": "Good project",
+ *                        "score": 10,
+ *                        "lastModifiedAt": "12:49:00 28/05/2023"
+ *                      }
+ *                    ],
+ *                    "member": [
+ *                      {
+ *                        "member": {
+ *                          "full_name": "ntkhaiuet",
+ *                          "email": "ntkhaiuet@gmail.com"
+ *                        },
+ *                        "reviewer": {
+ *                          "full_name": "sheissocute",
+ *                          "email": "sheissocute2001@gmail.com"
+ *                        },
+ *                        "isProjectReview": false,
+ *                        "_id": "646d0b4219e942ce3f0e81a4",
+ *                        "projectId": "646cf96851c0950a40e48068",
+ *                        "review": "Hoàn thành tốt",
+ *                        "score": 9,
+ *                        "lastModifiedAt": "02:36:52 24/05/2023"
+ *                      }
+ *                    ]
+ *                  }
  *      400:
  *        description: Project không tồn tại/User không tồn tại hoặc không thuộc project/Không tìm thấy đánh giá nào
  *        content:
@@ -288,10 +451,21 @@ router.get("/list/:projectId", verifyToken, async (req, res) => {
       });
     }
 
+    let listReviewProject = review.filter(
+      (review) => review.isProjectReview === true
+    );
+
+    let listReviewMember = review.filter(
+      (review) => review.isProjectReview === false
+    );
+
     res.status(200).json({
       success: true,
       message: "Nhận danh sách đánh giá thành công",
-      review: review,
+      review: {
+        project: listReviewProject,
+        members: listReviewMember,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -412,6 +586,13 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         .json({ success: false, message: "Project không tồn tại" });
     }
 
+    // Kiểm tra user tồn tại
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User không tồn tại" });
+    }
+
     const users = project.users;
 
     // Kiểm tra quyền user
@@ -423,13 +604,6 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         success: false,
         message: "User không có quyền chỉnh sửa đánh giá",
       });
-    }
-
-    // Kiểm tra user tồn tại
-    if (!user) {
-      return res
-        .status(400)
-        .json({ success: false, message: "User không tồn tại" });
     }
 
     // Cập nhật đánh giá
