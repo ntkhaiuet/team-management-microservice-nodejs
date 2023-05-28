@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
+const moment = require("moment-timezone");
 
 const { dateDiff } = require("../middleware/dateDiff");
 const formatUnixTime = require("../middleware/formatUnixTime");
@@ -236,9 +237,10 @@ router.get("/list", verifyToken, async function (req, res) {
     const listNotifyInvite = await Notification.find({type: 'Invite', userId: userId }).sort({ createdAt: -1 });
     // const listNotifyComment = await Notification.find({ taskId: { $in: taskIds }, type: 'Other', userId: { $ne: userId } }).sort({ createdAt: -1 });
     userNotifications = listNotifyAssign.concat(listNotifyInvite, ...listNotifyComment);
+    userNotifications.sort((a, b) => b.createdAt - a.createdAt);
     userNotifications.forEach((notification) => {
       const unixTime = notification.createdAt
-      const fomrattedTime = formatUnixTime(+unixTime);
+      const fomrattedTime = moment.unix(+unixTime / 1000).tz("Asia/Ho_Chi_Minh").format("HH:mm:ss DD/MM/YYYY");
       notification.createdAt = fomrattedTime
     });
     const unreadCount = userNotifications.filter(item => item.status === 'Unread').length;
@@ -320,6 +322,12 @@ router.put("/read", verifyToken, async function (req, res) {
           "Không tìm thấy người dùng",
       });
     }
+    const listTask = await Task.find({ assign:user.email })
+    const listTaskIds = listTask.map(task => task._id);
+    await Notification.updateMany(
+      { taskId: { $in: listTaskIds }, status: "Unread" },
+      { $set: { status: "Read" } }
+    );
     await Notification.updateMany(
       { userId: userId, status: "Unread" },
       { $set: { status: "Read" } }
