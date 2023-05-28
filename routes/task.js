@@ -193,8 +193,23 @@ router.post("/create", verifyToken, async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Assign không tồn tại" });
-    }
-
+    } 
+      if (assignUser.id !== req.userId) {
+        const notification = new Notification({
+          projectId: task.projectId,
+          taskId: task.id,
+          userId: assignUser.id,
+          content:
+            user.full_name +
+            " đã assign task " +
+            title +
+            " thuộc project " +
+            checkProject  .name +
+            " cho bạn ",
+          type: "Assign",
+        });
+        await notification.save()
+      }
     // Tạo task mới
     const newTask = new Task({
       projectId: project,
@@ -213,9 +228,14 @@ router.post("/create", verifyToken, async (req, res) => {
         weight: dateDiff(duedate, checkProject.plan.createdAt),
         percent: 1,
       },
+      commentUsers: [
+        {
+          userId: assignUser.id,
+          type: "Assign"
+        }
+      ],
       progress: 0,
     });
-
     await newTask.save();
     const taskWithStage = await Task.find({
       projectId: project,
@@ -262,6 +282,7 @@ router.post("/create", verifyToken, async (req, res) => {
         tags: newTask.tags,
         createdAt: newTask.createdAt,
         order: newTask.order,
+        commentUsers: newTask.commentUsers,
         progress: newTask.progress,
       },
     });
@@ -576,6 +597,19 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         });
         notificationSave.push(notification);
       }
+      const existingCommentUsers = task.commentUsers.filter(
+        (user) => !(user.type === "Assign" || user.userId.toString() === assignUser.id)
+      );
+      
+      const newCommentUser = {
+        userId: assignUser.id,
+        type: "Assign",
+        commentAt: Date.now(),
+      };
+      
+      const updatedCommentUsers = [...existingCommentUsers, newCommentUser];
+      
+      updateFields.commentUsers = updatedCommentUsers;
       updatesContent.push(`Assign: ${req.body.assign}`);
     }
 
@@ -679,15 +713,12 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         (user) => user.userId.toString() === req.userId
       );
       if (!existingCommentUser) {
-        commentUsers.push({
+          const newCommentUser = {
           userId: req.userId,
           commentAt: Date.now(),
-        });
+        };
+        updateFields.commentUsers = [...task.commentUsers, newCommentUser];
       }
-    }
-
-    if (commentUsers.length > 0) {
-      updateFields.commentUsers = commentUsers;
     }
 
     if (req.body.order) {
