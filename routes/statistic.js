@@ -163,7 +163,7 @@ router.get("/stagetime/:projectId", verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /api/statistic/taskandstage/{projectId}:
+ * /api/statistic/taskofstage/{projectId}:
  *  get:
  *    summary: Thống kê tỉ lệ phần trăm của task và stage trong project
  *    tags: [Statistics]
@@ -260,10 +260,10 @@ router.get("/stagetime/:projectId", verifyToken, async (req, res) => {
  *                message:
  *                  default: Lỗi hệ thống
  */
-// @route GET api/statistic/taskandstage/:projectId
-// @desc Thống kê tỉ lệ phần trăm của task và stage trong project
+// @route GET api/statistic/taskofstage/:projectId
+// @desc Thống kê tổng số task, số task hoàn thành và chưa hoàn thành của stage
 // @access Private
-router.get("/taskandstage/:projectId", verifyToken, async (req, res) => {
+router.get("/taskofstage/:projectId", verifyToken, async (req, res) => {
   try {
     const projectId = req.params.projectId;
 
@@ -295,52 +295,38 @@ router.get("/taskandstage/:projectId", verifyToken, async (req, res) => {
       });
     }
 
-    // Tạo mảng chứa các stage và trọng số của stage trong project
-    let totalWeightStage = 0;
-    const stageArray = project.plan.timeline.map((stage) => {
-      totalWeightStage += stage.percentOfProject.weight;
-      return {
-        stage: stage.stage,
-        weight: stage.percentOfProject.weight,
-      };
-    });
+    // Tạo mảng lưu số task đã và chưa hoàn thành của stage
+    let taskOfStage = [];
 
-    // Tạo mảng chứa các task theo stage
-    let tempTaskArray = [];
-    const stages = project.plan.timeline;
-
-    await Promise.all(
-      stages.map(async (stage) => {
+    // Tạo mảng lưu tổng số task của stage
+    const totalTaskOfStage = await Promise.all(
+      project.plan.timeline.map(async (stage, index) => {
         const tasks = await Task.find({
           projectId: projectId,
           stage: stage.stage,
-        }).select("stage title percentOfStage.percent");
-        return tasks;
-      })
-    ).then((results) => {
-      // Kết quả trả về theo thứ tự của stages
-      tempTaskArray = results.flat();
-    });
+        });
 
-    const taskArray = tempTaskArray.map((task) => {
-      const stage = stageArray.find((item) => item.stage === task.stage);
-      return {
-        title: task.title,
-        stage: task.stage,
-        percent: Number(
-          (
-            ((task.percentOfStage.percent * stage.weight) / totalWeightStage) *
-            100
-          ).toFixed(2)
-        ),
-      };
-    });
+        // Lưu số task đã và chưa hoàn thành vào mảng taskOfStage theo vị trí hiện tại
+        const doneTasks = tasks.filter((task) => task.status === "Done");
+        taskOfStage[index] = {
+          stage: stage.stage,
+          doneTaskCount: doneTasks.length,
+          undoneTaskCount: tasks.length - doneTasks.length,
+        };
+
+        return {
+          stage: stage.stage,
+          totalTaskCount: tasks.length,
+        };
+      })
+    );
 
     res.status(200).json({
       success: true,
-      message: "Thống kê % của task và stage trong project thành công",
-      stages: stageArray,
-      tasks: taskArray,
+      message:
+        "Thống kê tổng số task, số task hoàn thành và chưa hoàn thành của stage thành công",
+      totalTask: totalTaskOfStage,
+      doneAndUndoneTask: taskOfStage,
     });
   } catch (error) {
     console.log(error);
