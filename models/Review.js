@@ -10,10 +10,12 @@ const ReviewSchema = new Schema(
     member: {
       full_name: { type: String },
       email: { type: String },
+      role: { type: String, enum: ["Leader", "Member"] },
     },
     reviewer: {
       full_name: { type: String },
       email: { type: String },
+      role: { type: String, default: "Reviewer" },
     },
     review: { type: String, required: true },
     score: { type: Number, default: null },

@@ -162,11 +162,17 @@ router.post("/create", verifyToken, async (req, res) => {
         .json({ success: false, message: "Review đã tồn tại" });
     }
 
+    // Lấy role của member
+    const roleOfMember = memberInfo.projects.find(
+      (project) => project.project == projectId
+    );
+
     const newReview = new Review({
       projectId: projectId,
       member: {
         full_name: memberInfo.full_name,
         email: member,
+        role: roleOfMember.role,
       },
       reviewer: {
         full_name: req.userFullName,
