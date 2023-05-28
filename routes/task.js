@@ -505,13 +505,13 @@ router.put("/update/:id", verifyToken, async (req, res) => {
     let userAction = await User.findById(req.userId);
     let notificationSave = [];
     let commentUsers = [];
-    
+
     if (!task) {
       return res
         .status(400)
         .json({ success: false, message: "Id của task không đúng" });
     }
-    let project = await Project.findById(task.projectId)
+    let project = await Project.findById(task.projectId);
 
     if (req.body.stage) {
       const existingProject = await Project.findById(task.projectId);
@@ -566,7 +566,12 @@ router.put("/update/:id", verifyToken, async (req, res) => {
           taskId: task.id,
           userId: assignUser.id,
           content:
-            userAction.full_name + " đã assign task " + task.title + " thuộc project " + project.name + " cho bạn ",
+            userAction.full_name +
+            " đã assign task " +
+            task.title +
+            " thuộc project " +
+            project.name +
+            " cho bạn ",
           type: "Assign",
         });
         notificationSave.push(notification);
@@ -596,47 +601,58 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         projectId: task.projectId,
         taskId: task.id,
         userId: req.userId,
-        content: userAction.full_name + " đã thay đổi trạng thái của task " + task.title + " thuộc project " + project.name,
+        content:
+          userAction.full_name +
+          " đã thay đổi trạng thái của task " +
+          task.title +
+          " thuộc project " +
+          project.name,
       });
       notificationSave.push(notification);
 
       if (req.body.status === "Done") {
         task.progress = 1;
         await task.save();
-
-        // Tính progress của stage
-        const stage = req.body.stage || task.stage;
-        const [taskWithStage, project] = await Promise.all([
-          Task.find({
-            projectId: task.projectId,
-            stage: stage,
-          }),
-          Project.findById(task.projectId),
-        ]);
-        const stageProgress = taskWithStage.reduce((acc, curr) => {
-          return acc + curr.percentOfStage.percent * curr.progress;
-        }, 0);
-        const indexStage = project.plan.timeline.findIndex(
-          (item) => item.stage === stage
-        );
-        project.plan.timeline[indexStage].progress = stageProgress;
-        // Cập nhật ngày hoàn thành stage
-        if (stageProgress === 1) {
-          project.plan.timeline[indexStage].actual = onlyDate;
-        }
-
-        // Tính progress của project
-        const projectProgress = project.plan.timeline.reduce((acc, curr) => {
-          return acc + curr.percentOfProject.percent * curr.progress;
-        }, 0);
-        project.progress = projectProgress;
-        // Cập nhật trạng thái project nếu hoàn thành project
-        if (projectProgress === 1) {
-          project.status = "Completed";
-        }
-
-        await project.save();
+      } else {
+        task.progress = 0;
+        await task.save();
       }
+
+      // Tính progress của stage
+      const stage = req.body.stage || task.stage;
+      const [taskWithStage, projectOfTask] = await Promise.all([
+        Task.find({
+          projectId: task.projectId,
+          stage: stage,
+        }),
+        Project.findById(task.projectId),
+      ]);
+      const stageProgress = taskWithStage.reduce((acc, curr) => {
+        return acc + curr.percentOfStage.percent * curr.progress;
+      }, 0);
+      const indexStage = projectOfTask.plan.timeline.findIndex(
+        (item) => item.stage === stage
+      );
+      projectOfTask.plan.timeline[indexStage].progress = stageProgress;
+      // Cập nhật ngày hoàn thành stage
+      if (stageProgress === 1) {
+        projectOfTask.plan.timeline[indexStage].actual = onlyDate;
+      }
+
+      // Tính progress của project
+      const projectProgress = projectOfTask.plan.timeline.reduce(
+        (acc, curr) => {
+          return acc + curr.percentOfProject.percent * curr.progress;
+        },
+        0
+      );
+      projectOfTask.progress = projectProgress;
+      // Cập nhật trạng thái project nếu hoàn thành project
+      if (projectProgress === 1) {
+        projectOfTask.status = "Completed";
+      }
+
+      await projectOfTask.save();
     }
 
     if (req.body.tags) {
@@ -651,7 +667,12 @@ router.put("/update/:id", verifyToken, async (req, res) => {
         projectId: task.projectId,
         taskId: task.id,
         userId: req.userId,
-        content: userAction.full_name + " đã comment trong task " + task.title + " thuộc project " + project.name,
+        content:
+          userAction.full_name +
+          " đã comment trong task " +
+          task.title +
+          " thuộc project " +
+          project.name,
       });
       notificationSave.push(notification);
       const existingCommentUser = task.commentUsers.find(

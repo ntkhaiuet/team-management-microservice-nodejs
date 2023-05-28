@@ -84,6 +84,28 @@ function sendResetPasswordEmail(email) {
   });
 }
 
+// Hàm gửi email góp ý
+function sendFeedbackEmail(email, userEmail, fullname, subject, content) {
+  return new Promise((resolve, reject) => {
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
+      subject: subject,
+      text: `Người gửi: ${fullname}\nEmail: ${userEmail}\nNội dung: ${content}`,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+        reject("Có lỗi xảy ra");
+      } else {
+        console.log("Email sent: " + info.response);
+        resolve("Đã gửi email góp ý");
+      }
+    });
+  });
+}
+
 /**
  * @swagger
  * /api/email/verify/{token}:
@@ -327,8 +349,98 @@ const reset_password = async (req, res) => {
   }
 };
 
+/**
+ * @swagger
+ * /api/email/feedback:
+ *  post:
+ *    summary: Gửi email góp ý (chỉ trường content là bắt buộc)
+ *    tags: [Emails]
+ *    requestBody:
+ *      required: true
+ *      content:
+ *        application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              fullname:
+ *                default: Nguyễn Thế Khải
+ *              email:
+ *                default: 19020331@vnu.edu.vn
+ *              subject:
+ *                default: Góp ý
+ *              content:
+ *                default: Lỗi không cập nhật tiến độ project khi chuyển từ Done sang Review
+ *    responses:
+ *      200:
+ *        description: Đã gửi email góp ý
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: true
+ *                message:
+ *                  default: Đã gửi email góp ý
+ *      400:
+ *        description: Vui lòng nhập nội dung góp ý
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Vui lòng nhập nội dung góp ý
+ *      500:
+ *        description: Lỗi hệ thống
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: object
+ *              properties:
+ *                success:
+ *                  default: false
+ *                message:
+ *                  default: Lỗi hệ thống
+ */
+// Xử lý gửi email góp ý
+const feedback = async (req, res) => {
+  const { fullname, email, subject, content } = req.body;
+
+  //   Xác thực cơ bản
+  if (!content) {
+    return res
+      .status(400)
+      .json({ succes: false, message: "Vui lòng nhập nội dung góp ý" });
+  }
+
+  // Gửi email góp ý
+  try {
+    const result = await sendFeedbackEmail(
+      process.env.EMAIL,
+      email,
+      fullname,
+      subject,
+      content
+    );
+    var success;
+    if (result === "Có lỗi xảy ra") {
+      success = false;
+    } else {
+      success = true;
+    }
+    res.json({ success: success, message: result });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Lỗi hệ thống" });
+  }
+};
+
 module.exports = {
   verify,
   send,
   reset_password,
+  feedback,
 };

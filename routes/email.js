@@ -13,9 +13,14 @@ router.get("/verify/:token", emailController.verify);
 // @access Public
 router.post("/send", emailController.send);
 
-// @route GET api/email/resetpassword
+// @route POST api/email/resetpassword
 // @desc Gửi email đặt lại mật khẩu. Gửi 1 mật khẩu mới được tạo ngẫu nhiên qua email của người dùng
 // @access Public
 router.post("/reset_password", emailController.reset_password);
+
+// @route POST api/email/feedback
+// @desc Gửi email góp ý
+// @access Public
+router.post("/feedback", emailController.feedback);
 
 module.exports = router;
