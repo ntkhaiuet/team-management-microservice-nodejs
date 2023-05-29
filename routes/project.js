@@ -416,7 +416,6 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
         .status(400)
         .json({ success: false, message: "ProjectId không tồn tại" });
     }
-
     // Kiểm tra name project là duy nhất với mỗi user
     if (project.name !== name) {
       const checkNameProject = await Project.findOne({ name: name });
@@ -429,7 +428,6 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
 
     // Dữ liệu cần cập nhật
     let conditionUpdateProject = {};
-
     if (user && teammate) {
       // Kiểm tra user và teammate tồn tại
       const tempUser = { email: user.email, role: user.role, status: "Joined" };
@@ -464,6 +462,16 @@ router.put("/edit/:id", verifyToken, async (req, res) => {
             email: teammate[i].email,
             role: teammate[i].role,
           });
+        } else {
+          const userInvite = await User.findOne({email : teammate[i].email})
+          const userAction = await User.findById(req.userId)
+          const notification = new Notification({
+            projectId: projectId,
+            userId: userInvite.id,
+            content: userAction.full_name + " đã mời bạn vào project " + project.name,
+            type: "Invite",
+          });
+          await notification.save();
         }
       }
       projectUsers.push(user);
